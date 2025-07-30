@@ -10,8 +10,8 @@ services:
   #    POSTGRES_DB: imobiliaria
   #  volumes:
   #    - polls_pg:/var/lib/postgresql/data
-backend-imobiliaria:
-    container_name: backend-imobiliaria
+imoboliaria-backend:
+    container_name: imoboliaria-backend
     ports:
       - "98:98"
     build: ./imoboliaria-backend
