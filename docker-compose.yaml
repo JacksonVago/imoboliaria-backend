@@ -13,12 +13,12 @@ services:
 backend-imobiliaria:
     container_name: backend-imobiliaria
     ports:
-      - "4001:4001"
-    build: ./back-end-imobiliaria
+      - "90:90"
+    build: ./imoboliaria-backend
     depends_on:
       - postgres
     env_file:
-      - ./back-end-imobiliaria/.env
+      - ./imoboliaria-backend/.env
     command: sh -c "npx prisma migrate deploy && npm run seed && npm start"  
 volumes:
   polls_pg:
