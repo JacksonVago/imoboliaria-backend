@@ -1,0 +1,24 @@
+services:
+  #postgres:
+  #  container_name: postgres-imobiliaria
+  #  image: postgres:17-alpine
+  #  ports:
+  #    - '5433:5432'
+  #  environment:
+  #    POSTGRES_USER: postgres
+  #    POSTGRES_PASSWORD: docker
+  #    POSTGRES_DB: imobiliaria
+  #  volumes:
+  #    - polls_pg:/var/lib/postgresql/data
+backend-imobiliaria:
+    container_name: backend-imobiliaria
+    ports:
+      - "4001:4001"
+    build: ./back-end-imobiliaria
+    depends_on:
+      - postgres
+    env_file:
+      - ./back-end-imobiliaria/.env
+    command: sh -c "npx prisma migrate deploy && npm run seed && npm start"  
+volumes:
+  polls_pg:

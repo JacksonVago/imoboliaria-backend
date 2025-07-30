@@ -1,0 +1,432 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String       @id @default(uuid())
+  name        String
+  email       String       @unique
+  password    String
+  role        UserRole     @default(COLLABORATOR)
+  permissions Permission[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  //TODO: create dynamic roles (Cargos) and permissions (with custom names, permissions, descriptions, etc)
+
+  // Adicionando campo para o histórico de logins 
+  // loginHistory LoginHistory[]
+
+  @@map("users")
+}
+
+//migrate to it's instead of proprietario and locatario
+model Pessoa {
+  id          Int          @id @default(autoincrement())
+  documento   String       @unique() //CPF ou CNPJ 
+  nome        String
+  profissao   String?
+  estadoCivil EstadoCivil?
+  endereco    Endereco     @relation(fields: [enderecoId], references: [id])
+  enderecoId  Int
+  email       String? //Email 
+  telefone    String? //Telefone 
+  status      PessoaStatus
+
+  fiador        Fiador?
+  proprietarios Proprietario[]
+  locatarios    Locatario[]
+  documentos    GenericAnexo[]
+
+  @@map("pessoas")
+}
+
+model Proprietario {
+  id          Int    @id @default(autoincrement())
+  pessoa      Pessoa @relation(fields: [pessoaId], references: [id])
+  pessoaId    Int
+  cota_imovel Float  @default(100)
+  imovel      Imovel @relation(fields: [imovelId], references: [id])
+  imovelId    Int
+
+  @@map("proprietarios")
+}
+
+model Locatario {
+  id       Int    @id @default(autoincrement())
+  pessoa   Pessoa @relation(fields: [pessoaId], references: [id])
+  pessoaId Int
+
+  locacoes   Locacao[]
+  pagamentos Pagamento[]
+
+  @@map("locatarios")
+}
+
+model Fiador {
+  id       Int       @id @default(autoincrement())
+  pessoa   Pessoa    @relation(fields: [pessoaId], references: [id])
+  pessoaId Int       @unique
+  locacoes Locacao[]
+
+  @@map("fiadores")
+}
+
+// Histórico dos valores do imóvel
+model ImovelValorHistorico {
+  id             Int             @id @default(autoincrement())
+  proprietarioId Int?
+  tipo           ValorImovelTipo // QUal foi o tipo de alteração feita
+  data           DateTime        @default(now())
+  valor          Decimal
+  observacao     String?
+  imovel         Imovel          @relation(fields: [imovelId], references: [id])
+  imovelId       Int
+
+  @@map("valor_imovel_historico")
+}
+
+model Locacao {
+  id             Int            @id @default(autoincrement())
+  dataInicio     DateTime
+  dataFim        DateTime
+  valor_aluguel  Float
+  status         LocacaoStatus  @default(ATIVA)
+  imovel         Imovel?        @relation(fields: [imovelId], references: [id])
+  imovelId       Int?
+  dia_vencimento Int
+  documentos     GenericAnexo[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  //TODO: adicionar historico de reajustes e histórico de pagamentos
+  //TODO: Add more fields, like:
+  // - deposit amount
+  // - contract details
+  // - payment method
+  // - cancellation policy
+  //TODO; add anexos like, compro
+  // Relationships
+
+  // Relacionamentos
+
+  // Tipo de garantia
+  garantiaLocacaoTipo         GarantiaLocacaoTypes?
+  // Garantia de locação título de capitalização
+  garantiaTituloCapitalizacao TituloCapitalizacao?
+  // Garantia seguyro fiança (seguradoras)
+  garantiaSeguroFianca        SeguroFianca?
+  //Garantia deposito calcao
+  garantiaDepositoCalcao      DepositoCalcao?
+
+  locatarios            Locatario[]
+  valorAluguelHistorico valorAluguelHistorico[]
+  pagamentos            Pagamento[]
+  fiadores              Fiador[]
+
+  @@map("locacoes")
+}
+
+model DepositoCalcao {
+  id              Int     @id @default(autoincrement())
+  valorDeposito   Float
+  quantidadeMeses Int
+  locacao         Locacao @relation(fields: [locacaoId], references: [id])
+  locacaoId       Int     @unique
+}
+
+model SeguroFianca {
+  id           Int     @id @default(autoincrement())
+  numeroSeguro String
+  locacao      Locacao @relation(fields: [locacaoId], references: [id])
+  locacaoId    Int     @unique
+}
+
+model TituloCapitalizacao {
+  id           Int     @id @default(autoincrement())
+  numeroTitulo String
+  // Relationships
+  locacao      Locacao @relation(fields: [locacaoId], references: [id])
+  locacaoId    Int     @unique
+}
+
+// Histórico dos valores do aluguel
+model valorAluguelHistorico {
+  id        Int      @id @default(autoincrement())
+  locacao   Locacao  @relation(fields: [locacaoId], references: [id])
+  locacaoId Int
+  data      DateTime @default(now())
+  novoValor Decimal
+  motivo    String?
+
+  @@map("valor_aluguel_historico")
+}
+
+// //Imóvel - propriedade
+model Imovel {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // title       String //Título do imóvel
+  status      ImovelStatus //Status do imóvel (disponível, alugado, vendido, indisponível)
+  description String? //Descrição do imóvel
+  tipo        ImovelTipo //Tipo do imóvel (casa, apartamento, terreno)
+  finalidade  ImovelFinalidade //Finalidade do imóvel (aluguel, venda ou ambos)
+
+  porcentagem_lucro_imobiliaria Float //Porcentagem da imobiliária
+  valor_iptu                    Float? //Valor do IPTU
+  valor_condominio              Float? //Valor do condomínio
+  valor_aluguel                 Float? //Valor do aluguel
+  valor_venda                   Float? //Valor de venda
+  valor_agua                    Float? //Valor da água
+  valor_taxa_lixo               Float? //Valor da taxa de lixo
+
+  endereco   Endereco @relation(fields: [enderecoId], references: [id])
+  enderecoId Int
+
+  proprietarios Proprietario[] //Um imóvel pode ter vários proprietários
+  locacoes      Locacao[]
+
+  //Historico de valores
+  historicoValores ImovelValorHistorico[]
+
+  imovelPhotos ImovelPhoto[]
+  //anexar obervaçoes, exemplo: "Imóvel precisa de reforma, isso mostra as fotos"
+  observacoes  Observacao[]
+  documentos   GenericAnexo[]
+
+  @@map("imoveis")
+}
+
+model ImovelPhoto {
+  id        Int      @id @default(autoincrement())
+  url       String
+  imovel    Imovel   @relation(fields: [imovelId], references: [id])
+  imovelId  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("imovel_photos")
+}
+
+model Observacao {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  descricao String //Descrição da observação ou defeito
+  tipo      String //Tipo de observação (ex: manutenção, pintura, reforma)
+  status    String //Status (pendente, resolvido, etc.)
+  imovel    Imovel @relation(fields: [imovelId], references: [id])
+  imovelId  Int
+
+  ObservacaoAnexo ObservacaoAnexo[] //Anexos relacionados à observação
+
+  @@map("observacoes")
+}
+
+model ObservacaoAnexo {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  url          String //URL do anexo (foto ou documento)
+  tipo         String //Tipo do anexo (ex: imagem, documento, etc.)
+  observacao   Observacao @relation(fields: [observacaoId], references: [id])
+  observacaoId Int
+
+  @@map("observacao_anexos")
+}
+
+model Endereco {
+  id          Int      @id @default(autoincrement())
+  logradouro  String
+  numero      String
+  complemento String?
+  bairro      String
+  cidade      String
+  estado      String
+  cep         String
+  imoveis     Imovel[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  pessoas   Pessoa[]
+
+  @@map("enderecos")
+}
+
+model Anexo {
+  id         Int         @id @default(autoincrement())
+  url        String
+  tipo       String
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  pagamentos Pagamento[]
+
+  // Relationships
+  @@map("anexos")
+}
+
+model GenericAnexo {
+  id           Int      @id @default(autoincrement())
+  url          String
+  name         String?
+  size         Int?
+  type         String?
+  tipo_arquivo String // Ex.: "imagem", "documento"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  pessoa    Pessoa?  @relation(fields: [pessoaId], references: [id])
+  pessoaId  Int?
+  locacao   Locacao? @relation(fields: [locacaoId], references: [id])
+  locacaoId Int?
+  imovel    Imovel?  @relation(fields: [imovelId], references: [id])
+  imovelId  Int?
+
+  @@map("generic_anexos")
+}
+
+model Pagamento {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  locacao   Locacao @relation(fields: [locacaoId], references: [id])
+  locacaoId Int
+
+  statusPagamento        String //Status do pagamento (pendente, pago, atrasado)
+  dataPagamento          DateTime //Data do pagamento 
+  diaVencimentoPagamento DateTime
+
+  valor                Float //Valor do pagamento
+  comprovantePagamento Anexo? @relation(fields: [anexoId], references: [id]) //Comprovante de pagamento
+
+  // locacao              Locacao  @relation(fields: [locacaoId], references: [id])
+  // locacaoId            Int
+  // dataPagamento        DateTime
+  // valor                Decimal
+  // statusPagamento      String
+  // comprovantePagamento String?
+
+  // createdAt   DateTime   @default(now())
+  // updatedAt   DateTime   @updatedAt
+  // Locatario   Locatario? @relation(fields: [locatarioId], references: [id])
+  // locatarioId Int?
+  locatario   Locatario? @relation(fields: [locatarioId], references: [id])
+  locatarioId Int?
+  anexoId     Int?
+}
+
+enum Permission {
+  //can do everything
+  ALL
+
+  //Imoveis
+  CREATE_IMOVEL
+  UPDATE_IMOVEL
+  DELETE_IMOVEL
+  VIEW_IMOVELS
+
+  //Locatarios
+  CREATE_LOCATARIO
+  UPDATE_LOCATARIO
+  DELETE_LOCATARIO
+  VIEW_LOCATARIOS
+
+  //Pessoas
+  CREATE_PESSOA
+  UPDATE_PESSOA
+  DELETE_PESSOA
+  VIEW_PESSOAS
+
+  //Proprietarios
+  CREATE_PROPRIETARIO
+  UPDATE_PROPRIETARIO
+  DELETE_PROPRIETARIO
+  VIEW_PROPRIETARIOS
+
+  //Locacoes
+  CREATE_LOCACAO
+  UPDATE_LOCACAO
+  DELETE_LOCACAO
+  VIEW_LOCACOES
+
+  // CREATE_USER
+  // VIEW_PROPERTIES
+  // MANAGE_LISTINGS
+  //Add more permissions as needed
+}
+
+enum UserRole {
+  ADMIN
+  COLLABORATOR
+}
+
+enum EstadoCivil {
+  SOLTEIRO
+  CASADO
+  DIVORCIADO
+  VIUVO
+  UNIAO_ESTAVEL
+}
+
+enum ImovelStatus {
+  DISPONIVEL
+  ALUGADO
+  VENDIDO
+  INDISPONIVEL
+}
+
+enum ValorImovelTipo {
+  VENDA
+  ALUGUEL
+  IPTU
+  CONDOMINIO
+  AGUA
+  TAXA_LIXO
+  PORCENTAGEM_LUCRO_IMOBILIARIA
+}
+
+enum GarantiaLocacaoTypes {
+  SEGURO_FIANCA
+  TITULO_CAPITALIZACAO
+  DEPOSITO_CALCAO
+  FIADOR
+}
+
+enum LocacaoStatus {
+  ATIVA
+  ENCERRADA
+  AGUARDANDO_DOCUMENTOS
+}
+
+enum ImovelTipo {
+  CASA
+  APARTAMENTO
+  TERRENO
+}
+
+enum PessoaStatus {
+  ATIVA
+  CANCELADA
+}
+
+enum ImovelFinalidade {
+  ALUGUEL
+  VENDA
+  AMBOS
+}
