@@ -259,6 +259,7 @@ export class PessoasService {
     const skip = page > 1 ? (page - 1) * pageSize : 0;
     let arr_id: number[] = [];
 
+    console.log('antes de where ' + new Date());
     if (exclude !== null && exclude !== undefined) {
       exclude.split(',').map((id) => {
         if (id !== '') {
@@ -340,6 +341,7 @@ export class PessoasService {
       ]
 
     };
+    console.log('antes de findmany ' + new Date());
 
     const [data, total] = await this.prismaService.$transaction([
       this.prismaService.pessoa.findMany({
@@ -358,6 +360,7 @@ export class PessoasService {
       this.prismaService.pessoa.count({ where }),
     ]);
 
+    console.log('fim ' + new Date());
     const totalPages = Math.ceil(total / pageSize);
     return {
       data,

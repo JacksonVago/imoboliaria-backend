@@ -135,6 +135,13 @@ export class CreateLocacaoDto {
   quantidadeMeses: number;
 }
 
+export class UpdateLocacaoDto extends PartialType(CreateLocacaoDto) {
+  @Transform(({ value }) => {
+    return value.map(Number);
+  })
+  documentosToDeleteIds?: number[];
+}
+
 export class CreatePreLinkLocacaoDto {
   @Transform(({ value }) => Number(value))
   @IsInt()
@@ -165,7 +172,7 @@ export class UpdateLocatarioDto extends PartialType(CreateLocatarioDto) {
 
 export const LOCACAO_ROUTES: BaseRoutes = {
   create: {
-    name: 'create',
+    name: 'create Locacao',
     route: '/',
     permission: Permission.CREATE_LOCACAO,
   },
@@ -175,7 +182,7 @@ export const LOCACAO_ROUTES: BaseRoutes = {
     permission: Permission.VIEW_LOCACOES,
   },
   update: {
-    name: 'update',
+    name: 'update Locacao',
     route: ':id',
     permission: Permission.UPDATE_LOCACAO,
   },
@@ -185,7 +192,7 @@ export const LOCACAO_ROUTES: BaseRoutes = {
     permission: Permission.VIEW_LOCACOES,
   },
   delete: {
-    name: 'delete',
+    name: 'delete Locacao',
     route: ':id',
     permission: Permission.DELETE_LOCACAO,
   },
@@ -251,7 +258,7 @@ export class LocacaoController {
   @FormDataRequest()
   async update(
     @Param() { id }: BaseParamsByIdDto,
-    @Body() data: UpdateLocatarioDto,
+    @Body() data: UpdateLocacaoDto,
   ) {
     return await this.locacaoService.update(id, data);
   }
@@ -280,13 +287,13 @@ export class LocacaoController {
     );
   }
 
-  @Put(LOCACAO_ROUTES.updateLocacao.route)
+  /*@Put(LOCACAO_ROUTES.updateLocacao.route)
   @Permissions(LOCACAO_ROUTES.updateLocacao.permission)
   @FormDataRequest()
   async preLinkLocatarioToLocacao(
     @Param() { id }: BaseParamsByIdDto,
-    @Body() data: CreateLocacaoDto,
+    @Body() data: UpdateLocacaoDto,
   ) {
     return await this.locacaoService.updateLocacao(id, data);
-  }
+  }*/
 }

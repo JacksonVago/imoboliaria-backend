@@ -313,7 +313,7 @@ export class ImoveisService {
       complemento,
       imagesToDeleteIds,
       images,
-      docsToDeleteIds,
+      documentosToDeleteIds,
       documentos,
       ...imovelData
     } = data;
@@ -446,11 +446,11 @@ export class ImoveisService {
     }
 
     // Remove documentos, se solicitado
-    if (docsToDeleteIds?.length) {
+    if (documentosToDeleteIds?.length) {
 
       /*let arr_id: number[] = [];
 
-      docsToDeleteIds.split(',').map((id) => {
+      documentosToDeleteIds.split(',').map((id) => {
         if (id !== '') {
           arr_id.push(parseFloat(id));
         }
@@ -459,7 +459,7 @@ export class ImoveisService {
       await this.prismaService.genericAnexo.deleteMany({
         where: {
           id: {
-            in: docsToDeleteIds,
+            in: documentosToDeleteIds,
           },
         },
       });

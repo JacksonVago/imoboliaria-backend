@@ -8,7 +8,14 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
+RUN apk add --no-cache openssl
 RUN npm install
+
+COPY prisma ./prisma/
+# Copy your Prisma schema
+
+RUN npx prisma generate
+# Generate Prisma Client
 
 # Copy the rest of your application code
 COPY . .
@@ -20,4 +27,4 @@ RUN npm run build
 EXPOSE 98
 
 # Command to run the application
-CMD ["node", "dist/main"]
+CMD ["node", "dist/src/main.js"]

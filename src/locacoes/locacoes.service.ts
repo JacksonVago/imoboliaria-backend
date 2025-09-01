@@ -13,6 +13,7 @@ import { MemoryStoredFile } from 'nestjs-form-data';
 import { randomUUID } from 'node:crypto';
 import {
   CreateLocacaoDto,
+  UpdateLocacaoDto,
 } from './locacoes.controller';
 
 @Injectable()
@@ -138,6 +139,7 @@ export class LocacaoService {
     const skip = page > 1 ? (page - 1) * pageSize : 0;
     let arr_id: number[] = [];
 
+    console.log(' inicio ', Date());
     if (exclude !== null && exclude !== undefined) {
       exclude.split(',').map((id) => {
         if (id !== '') {
@@ -267,6 +269,7 @@ export class LocacaoService {
 
     };
 
+    console.log(' antes ', Date());
     const [data, total] = await this.prismaService.$transaction([
       this.prismaService.locacao.findMany({
         where,
@@ -293,6 +296,7 @@ export class LocacaoService {
       }),
       this.prismaService.locacao.count({ where }),
     ]);
+    console.log(' depois ', Date());
 
     const totalPages = Math.ceil(total / pageSize);
     return {
@@ -304,7 +308,7 @@ export class LocacaoService {
     };
   }
 
-  async update(id: number, updateLocatarioDto: any) {//} UpdateLocatarioDto) {
+  async updateLocatario(id: number, updateLocatarioDto: any) {//} UpdateLocatarioDto) {
     //atualizar status da locação, atualizar preço do aluguel, atualizar status do imóvel, atualizar as datas de início e fim da locação, adicionar obersevações vinculadas a locação, imovel e ao locatário (opcional ter locatario)
 
     /*const result = await this.prismaService.locatario.update({
@@ -800,7 +804,7 @@ export class LocacaoService {
     return true;
   }
 
-  async updateLocacao(locacaoId: number, data: CreateLocacaoDto) {
+  async update(locacaoId: number, data: UpdateLocacaoDto) {
     try {
       const {
         dataInicio,
