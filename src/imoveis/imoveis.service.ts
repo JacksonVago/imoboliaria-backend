@@ -561,7 +561,6 @@ export class ImoveisService {
         };
 
         const str_url = await this.filesService.uploadFile(adaptedFile);
-        console.log(str_url);
         const fileType = getFileType(file);
 
         return this.prismaService.genericAnexo.create({

@@ -28,8 +28,6 @@ async function bootstrap() {
   //   console.error('Error creating admin user', error);
   // }
 
-  console.log(port);
-
   await app.listen(port);
 
 }

@@ -136,6 +136,7 @@ export class CreateLocacaoDto {
 }
 
 export class UpdateLocacaoDto extends PartialType(CreateLocacaoDto) {
+  @IsOptional()
   @Transform(({ value }) => {
     return value.map(Number);
   })
@@ -164,7 +165,6 @@ export class GetLocacoesQueryDto extends BaseGetPessoaQueryDto { }
 
 export class UpdateLocatarioDto extends PartialType(CreateLocatarioDto) {
   @Transform(({ value }) => {
-    console.log(' UpdateProprietarioDto value', value);
     return value.map(Number);
   })
   documentosToDeleteIds?: number[];
@@ -226,7 +226,6 @@ export class LocacaoController {
   @Permissions(LOCACAO_ROUTES.create.permission)
   @FormDataRequest()
   create(@Body() createLocacaoDto: CreateLocacaoDto) {
-    console.log(createLocacaoDto);
 
     return this.locacaoService.create(createLocacaoDto);
   }
@@ -258,7 +257,7 @@ export class LocacaoController {
   @FormDataRequest()
   async update(
     @Param() { id }: BaseParamsByIdDto,
-    @Body() data: UpdateLocacaoDto,
+    @Body() data: CreateLocacaoDto,
   ) {
     return await this.locacaoService.update(id, data);
   }

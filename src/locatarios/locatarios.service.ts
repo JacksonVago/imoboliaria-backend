@@ -390,7 +390,6 @@ export class LocatariosService {
       nextPaymentDate.setDate(1); // Reseta o dia para evitar problemas com meses curtos
     }
 
-    console.log(payments);
     return payments;
   }
 
@@ -769,8 +768,6 @@ export class LocatariosService {
           garantiaTituloCapitalizacao: true,
         },
       });
-      //console.log('titulo numero', tituloCapitalizacaoNumero);
-      console.log('result titulo', result.garantiaTituloCapitalizacao);
 
       if (documentos) {
         await this.createLocacaoDocuments(locatarioId, documentos);

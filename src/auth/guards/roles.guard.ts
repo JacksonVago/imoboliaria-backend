@@ -60,18 +60,16 @@ export class RolesGuard extends AuthGuard('jwt') implements CanActivate {
     // verify permissions (we need to get the user permissions from the database)
     const userData = await this.getUserWithPermissions(user.id);
     const userPermissions = userData?.permissions || [];
-    console.log('userPermissions', userPermissions);
     //verify if the user has 'ALL' permission
     if (userPermissions.includes(Permission.ALL)) {
       return true;
     }
 
     // Verify if the route needs permissions and  Verify if user has the required permissions, base on route and
-    console.log('requiredPermissions', requiredPermissions);
     const hasRequiredPermissions = requiredPermissions
       ? requiredPermissions?.every((permission) =>
-          userPermissions?.includes(permission),
-        )
+        userPermissions?.includes(permission),
+      )
       : true;
 
     return hasRequiredRole && hasRequiredPermissions;

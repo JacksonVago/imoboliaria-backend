@@ -21,7 +21,6 @@ export class AuthenticateUserController {
   @Post()
   @HttpCode(200)
   async handle(@Body() data: AuthenticateUserDTO) {
-    console.log(data);
 
     const { email, password } = data;
     const result = await this.authService.authenticateUser(email, password);

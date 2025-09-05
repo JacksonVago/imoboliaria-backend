@@ -12,8 +12,7 @@ import { GarantiaLocacaoTypes, Locacao, LocacaoStatus, Prisma } from '@prisma/cl
 import { MemoryStoredFile } from 'nestjs-form-data';
 import { randomUUID } from 'node:crypto';
 import {
-  CreateLocacaoDto,
-  UpdateLocacaoDto,
+  CreateLocacaoDto
 } from './locacoes.controller';
 
 @Injectable()
@@ -24,13 +23,28 @@ export class LocacaoService {
   ) { }
 
   async create(createLocacaoDto: CreateLocacaoDto) {
+    const {
+      dataInicio,
+      dataFim,
+    } = createLocacaoDto;
+
     let str_fiador: string = createLocacaoDto.fiador.toString();
 
     let fiadores_aux = str_fiador.split(',').map((item) => {
       return { pessoaId: parseInt(item) };
     });
 
-    console.log(fiadores_aux);
+    const isValid = this.checkIsValid({
+      dataInicio,
+      dataFim,
+    });
+
+    if (!isValid) {
+      throw new BadRequestException(
+        'The rental period must be at least one month',
+      );
+    }
+
     const result = await this.prismaService.locacao.create({
       data: {
         dataInicio: createLocacaoDto.dataInicio,
@@ -139,7 +153,6 @@ export class LocacaoService {
     const skip = page > 1 ? (page - 1) * pageSize : 0;
     let arr_id: number[] = [];
 
-    console.log(' inicio ', Date());
     if (exclude !== null && exclude !== undefined) {
       exclude.split(',').map((id) => {
         if (id !== '') {
@@ -269,7 +282,6 @@ export class LocacaoService {
 
     };
 
-    console.log(' antes ', Date());
     const [data, total] = await this.prismaService.$transaction([
       this.prismaService.locacao.findMany({
         where,
@@ -296,7 +308,6 @@ export class LocacaoService {
       }),
       this.prismaService.locacao.count({ where }),
     ]);
-    console.log(' depois ', Date());
 
     const totalPages = Math.ceil(total / pageSize);
     return {
@@ -590,7 +601,6 @@ export class LocacaoService {
       nextPaymentDate.setDate(1); // Reseta o dia para evitar problemas com meses curtos
     }
 
-    console.log(payments);
     return payments;
   }
 
@@ -804,7 +814,7 @@ export class LocacaoService {
     return true;
   }
 
-  async update(locacaoId: number, data: UpdateLocacaoDto) {
+  async update(locacaoId: number, data: CreateLocacaoDto) {
     try {
       const {
         dataInicio,
@@ -812,6 +822,7 @@ export class LocacaoService {
         valor_aluguel,
         // locatarioId,
         // imovelId,
+        status,
         documentos,
         garantiaLocacaoTipo,
         documentosToDeleteIds,
@@ -877,55 +888,8 @@ export class LocacaoService {
           dataInicio,
           dataFim,
           valor_aluguel,
+          status,
           garantiaLocacaoTipo,
-          /*fiadores:
-            garantiaLocacaoTipo === 'FIADOR'
-              ? existingLocacao.fiadores
-                ? {
-                    update: {
-                      documento: fiadorDocumento,
-                      email: fiadorEmail,
-                      nome: fiadorNome,
-                      profissao: fiadorProfissao,
-                      telefone: fiadorTelefone,
-                      estadoCivil: fiadorEstadoCivil,
-                      tipo: TipoPessoa.FIADOR,
-                      endereco: {
-                        create: {
-                          logradouro: fiadorLogradouro,
-                          numero: String(fiadorNumero),
-                          complemento: fiadorComplemento,
-                          bairro: fiadorBairro,
-                          cep: fiadorCep,
-                          cidade: fiadorCidade,
-                          estado: fiadorEstado,
-                        },
-                      },
-                    },
-                  }
-                : {
-                    create: {
-                      documento: fiadorDocumento,
-                      email: fiadorEmail,
-                      nome: fiadorNome,
-                      profissao: fiadorProfissao,
-                      telefone: fiadorTelefone,
-                      estadoCivil: fiadorEstadoCivil,
-                      tipo: TipoPessoa.FIADOR,
-                      endereco: {
-                        create: {
-                          logradouro: fiadorLogradouro,
-                          numero: String(fiadorNumero),
-                          complemento: fiadorComplemento,
-                          bairro: fiadorBairro,
-                          cep: fiadorCep,
-                          cidade: fiadorCidade,
-                          estado: fiadorEstado,
-                        },
-                      },
-                    },
-                  }
-              : undefined,*/
           garantiaTituloCapitalizacao:
             garantiaLocacaoTipo === 'TITULO_CAPITALIZACAO'
               ? existingLocacao.garantiaTituloCapitalizacao
@@ -969,8 +933,6 @@ export class LocacaoService {
           garantiaTituloCapitalizacao: true,
         },
       });
-      console.log('titulo numero', numeroTitulo);
-      console.log('result titulo', result.garantiaTituloCapitalizacao);
 
       if (documentos) {
         await this.createLocacaoDocuments(locatarioId, documentos);

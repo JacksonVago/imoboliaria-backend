@@ -22,7 +22,6 @@ export class FilesService {
           contentType: file.mimetype,
         });
 
-      console.log('supabaseresult', result);
       return result?.data?.fullPath;
     } catch (error) {
       console.log('supabaseerror', error);

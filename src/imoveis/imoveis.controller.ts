@@ -94,7 +94,6 @@ export class ImoveisController {
     @Param() { id }: BaseParamsByIdDto,
     @Body() data: UpdateImovelDto,
   ) {
-    console.log(data);
 
     return await this.imoveisService.update(id, data);
   }

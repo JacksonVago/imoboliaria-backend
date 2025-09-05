@@ -23,7 +23,6 @@ export class ProprietariosService {
 
   async create(data: CreateProprietarioDto) {
     try {
-      console.log('Create propritetario data', data);
       //const connectImoveisDataIds: Prisma.ImovelWhereUniqueInput[] =
       //        data?.vincularImoveisIds?.map((id) => ({ id }));
 
@@ -96,8 +95,6 @@ export class ProprietariosService {
   //async update(id: number, data: UpdateProprietarioDto) {
   async update(id: number, data: CreateProprietarioDto) {
 
-    console.log(id);
-    console.log(data);
 
     const proprietarioExists = await this.prismaService.proprietario.findUnique(
       {
@@ -184,7 +181,6 @@ export class ProprietariosService {
   }
 
   async linkProprietarioToImovel(proprietarioId: number, imovelId: number, linkDto: CreateProprietarioDto) {
-    console.log('linkProprietarioToImovel', { proprietarioId, imovelId, linkDto });
 
     const pessoaExists = await this.prismaService.pessoa.findUnique({
       where: {

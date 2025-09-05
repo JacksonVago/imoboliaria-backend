@@ -150,7 +150,6 @@ export class CreateLocatarioDto {
 
 export class UpdateLocatarioDto extends PartialType(CreateLocatarioDto) {
   @Transform(({ value }) => {
-    console.log(' UpdateProprietarioDto value', value);
     return value.map(Number);
   })
   documentosToDeleteIds?: number[];

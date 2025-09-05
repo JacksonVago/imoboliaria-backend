@@ -16,7 +16,6 @@ import { IsString } from 'class-validator';
 import { FormDataRequest } from 'nestjs-form-data';
 import { CreateProprietarioDto } from './dtos/create-proprietario.dto';
 import { ProprietariosService } from './proprietarios.service';
-import { log } from 'node:console';
 export class GetProprietariosQueryDto extends BaseGetPaginatedQueryDto { }
 
 export const PROPRIETARIOS_ROUTES: BaseRoutes = {
@@ -106,7 +105,6 @@ export class ProprietariosController {
     @Param('imovelId') imovelId: number,
     @Body() data: CreateProprietarioDto
   ) {
-    console.log(data);
 
     return await this.proprietariosService.linkProprietarioToImovel(
       id,
@@ -137,7 +135,6 @@ export class ProprietariosController {
   @Permissions(PROPRIETARIOS_ROUTES.search.permission)
   async search(@Query() data: GetProprietariosQueryDto) {
     const { search, page, limit } = data;
-    console.log(data);
 
     const response = await this.proprietariosService.findManyBySearch(
       search,
@@ -145,7 +142,6 @@ export class ProprietariosController {
       limit,
     );
 
-    console.log(response);
 
     return response;
   }
