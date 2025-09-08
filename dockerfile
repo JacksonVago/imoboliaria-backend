@@ -7,6 +7,12 @@ WORKDIR /app
 # Copy package.json and package-lock.json (or yarn.lock) to the working directory
 COPY package*.json ./
 
+#Show erros
+RUN set -eux;
+
+# Run update
+RUN apt-get update && apt-get upgrade -y
+
 # Install dependencies
 RUN apk add --no-cache openssl
 RUN npm install
