@@ -148,6 +148,7 @@ export class LocacaoService {
     search: string,
     page: number,
     pageSize: number,
+    statusLocacao: LocacaoStatus | null | undefined,
     exclude: string | null,
   ): Promise<BasePaginationData<Locacao>> {
     const skip = page > 1 ? (page - 1) * pageSize : 0;
@@ -159,6 +160,12 @@ export class LocacaoService {
           arr_id.push(parseFloat(id));
         }
       })
+    }
+
+    if (statusLocacao !== undefined) {
+      if (statusLocacao.toString() === 'undefined') {
+        statusLocacao = undefined;
+      }
     }
 
     const where: Prisma.LocacaoWhereInput = {
@@ -275,13 +282,13 @@ export class LocacaoService {
           },
         },
       ],
-      //Quando quiser excluir id´s
       AND: [
+        ((statusLocacao === null || statusLocacao === undefined) ? {} : { status: { equals: statusLocacao } }),
         (exclude === null ? {} : { id: { notIn: arr_id } }),
       ]
-
     };
 
+    console.log('WHERE LOCACAO', where.AND);
     const [data, total] = await this.prismaService.$transaction([
       this.prismaService.locacao.findMany({
         where,
@@ -309,6 +316,8 @@ export class LocacaoService {
       this.prismaService.locacao.count({ where }),
     ]);
 
+    console.log('DATA LOCACAO', data.length);
+    console.log('DATA LOCACAO', data);
     const totalPages = Math.ceil(total / pageSize);
     return {
       data,

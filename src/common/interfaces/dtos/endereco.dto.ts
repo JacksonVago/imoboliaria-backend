@@ -1,10 +1,10 @@
-import { IsNumberString, IsOptional, IsString, Matches } from 'class-validator';
+import { IsOptional, IsString, Matches } from 'class-validator';
 
 export class EnderecoDto {
   @IsString()
   logradouro: string;
 
-  @IsNumberString()
+  @IsString()
   numero: string;
 
   @IsString()

@@ -1,6 +1,6 @@
 import { Permissions } from '@/auth/decorators/permissions.decorator';
 import { BaseRoutes } from '@/common/interfaces/base-routes';
-import { BaseGetPessoaQueryDto, BaseParamsByIdDto } from '@/common/interfaces/base-search';
+import { BaseParamsByIdDto, DEFAULT_PAGE_SIZE } from '@/common/interfaces/base-search';
 import {
   Body,
   Controller,
@@ -161,7 +161,25 @@ export class CreateLocatarioDto {
   locacao?: CreateLocacaoDto;
 }
 
-export class GetLocacoesQueryDto extends BaseGetPessoaQueryDto { }
+export class GetLocacoesQueryDto {
+  @IsOptional()
+  @Transform(({ value }) => parseInt(value, DEFAULT_PAGE_SIZE))
+  page?: number;
+
+  @IsOptional()
+  @Transform(({ value }) => parseInt(value, DEFAULT_PAGE_SIZE))
+  limit?: number;
+
+  @IsOptional()
+  search?: string;
+
+  @IsOptional()
+  status?: LocacaoStatus | null;
+
+  @IsOptional()
+  exclude?: string;
+
+}
 
 export class UpdateLocatarioDto extends PartialType(CreateLocatarioDto) {
   @Transform(({ value }) => {
@@ -241,8 +259,8 @@ export class LocacaoController {
   @Get(LOCACAO_ROUTES.search.route)
   @Permissions(LOCACAO_ROUTES.search.permission)
   async search(@Query() data: GetLocacoesQueryDto) {
-    const { search, page, limit, exclude } = data;
-    const response = await this.locacaoService.findMany(search, page, limit, exclude);
+    const { search, page, limit, status, exclude } = data;
+    const response = await this.locacaoService.findMany(search, page, limit, status, exclude);
     return response;
   }
 
