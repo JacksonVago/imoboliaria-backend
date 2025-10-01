@@ -4,26 +4,34 @@ import { Role } from '@/auth/enums/roles.enum';
 import { UserPayload } from '@/auth/estrategies/jwt.strategy';
 import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
 import { Permission } from '@prisma/client';
-import { IsArray, IsEnum, IsString, IsStrongPassword } from 'class-validator';
+import { IsArray, IsEnum, IsOptional, IsString, IsStrongPassword } from 'class-validator';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { UsersService } from './users.service';
 
 export class CreateUserDto {
   @IsString()
+  login: string;
+
+  @IsString()
   name: string;
 
   @IsString()
+  @IsOptional()
   email?: string;
 
   @IsStrongPassword()
   password: string;
 
   @IsArray()
+  @IsOptional()
   @IsEnum(Permission, { each: true })
   permissions: Permission[];
 }
 
 export class CreateAdminUserDto {
+  @IsString()
+  login: string;
+
   @IsString()
   name: string;
 
@@ -56,11 +64,12 @@ export class BaseParamsByStringIdDto {
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly UsersService: UsersService) {}
+  constructor(private readonly UsersService: UsersService) { }
 
   @Post(USER_ROUTES.CREATE)
   @Roles(Role.ADMIN)
   create(@Body() createUserDto: CreateUserDto) {
+    console.log('CreateUserDto', createUserDto);
     return this.UsersService.createUser(createUserDto);
   }
 
@@ -94,6 +103,7 @@ export class UsersController {
   async registerAdmin(@Body() createUserDto: CreateAdminUserDto) {
     //Only the first user can create an admin user
     return await this.UsersService.createAdminUser(
+      createUserDto.login,
       createUserDto.name,
       createUserDto.email,
       createUserDto.password,

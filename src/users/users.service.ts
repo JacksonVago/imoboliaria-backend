@@ -7,12 +7,12 @@ import { CreateUserDto } from './users.controller';
 
 @Injectable()
 export class UsersService {
-  constructor(private PrismaService: PrismaService) {}
+  constructor(private PrismaService: PrismaService) { }
   async createUser(createUserDto: CreateUserDto) {
-    const { name, email, permissions } = createUserDto;
+    const { login, name, email, permissions } = createUserDto;
     const checkIfUserExists = await this.PrismaService.user.findUnique({
       where: {
-        email: email,
+        login: email,
       },
     });
 
@@ -24,6 +24,7 @@ export class UsersService {
 
     return await this.PrismaService.user.create({
       data: {
+        login: login,
         name: name,
         email: email,
         password: hashedPasword,
@@ -53,7 +54,7 @@ export class UsersService {
     });
   }
 
-  async createAdminUser(name: string, email: string, password: string) {
+  async createAdminUser(login: string, name: string, email: string, password: string) {
     const checkAdminExists = await this.PrismaService.user.findFirst({
       where: {
         role: UserRole.ADMIN,
@@ -66,7 +67,7 @@ export class UsersService {
 
     const checkIfUserExists = await this.PrismaService.user.findUnique({
       where: {
-        email: email,
+        login: login,
       },
     });
 
@@ -78,6 +79,7 @@ export class UsersService {
 
     const result = await this.PrismaService.user.create({
       data: {
+        login,
         name,
         email,
         password: hashedPasword,

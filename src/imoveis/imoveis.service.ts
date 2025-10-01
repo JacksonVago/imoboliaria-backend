@@ -8,9 +8,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import {
   Endereco,
   Imovel,
-  ImovelPhoto,
   ImovelStatus,
-  ImovelTipo,
   Locacao,
   LocacaoStatus,
   Prisma,
@@ -34,36 +32,36 @@ export class ImoveisService {
     private readonly filesService: FilesService,
   ) { }
 
-  async create(
-    data: CreateImovelDto,
-  ): Promise<Imovel & { endereco: Endereco; imovelPhotos: ImovelPhoto[] }> {
+  //async create(createImovelDto: CreateImovelDto,): Promise<Imovel & { endereco: Endereco; imovelPhotos: ImovelPhoto[] }> {
+  async create(createImovelDto: CreateImovelDto,) {
     const result = await this.prismaService.imovel.create({
       data: {
-        description: data.description,
-        status: data.status,
-        tipo: data.tipo,
-        finalidade: data.finalidade,
-
-        porcentagem_lucro_imobiliaria: data.porcentagem_lucro_imobiliaria,
-        valor_iptu: data.valor_iptu,
-        valor_condominio: data.valor_condominio,
-        valor_aluguel: data.valor_aluguel,
-        valor_venda: data.valor_venda,
+        description: createImovelDto.description,
+        status: createImovelDto.status,
+        finalidade: createImovelDto.finalidade,
+        porcentagem_lucro_imobiliaria: createImovelDto.porcentagem_lucro_imobiliaria,
+        valor_iptu: createImovelDto.valor_iptu,
+        valor_condominio: createImovelDto.valor_condominio,
+        valor_aluguel: createImovelDto.valor_aluguel,
+        valor_venda: createImovelDto.valor_venda,
 
         //TODO: add observacoes
         //TODO: add imovelPhotos
 
         endereco: {
           create: {
-            logradouro: data?.logradouro,
-            numero: data?.numero,
-            bairro: data?.bairro,
-            cidade: data?.cidade,
-            estado: data?.estado,
-            cep: data?.cep,
-            complemento: data?.complemento,
+            logradouro: createImovelDto?.logradouro,
+            numero: createImovelDto?.numero,
+            bairro: createImovelDto?.bairro,
+            cidade: createImovelDto?.cidade,
+            estado: createImovelDto?.estado,
+            cep: createImovelDto?.cep,
+            complemento: createImovelDto?.complemento,
           },
         },
+        tipo: {
+          connect: { id: createImovelDto.tipoId }
+        }
       },
       include: {
         endereco: true,
@@ -73,12 +71,12 @@ export class ImoveisService {
       },
     });
 
-    if (data?.images?.length) {
-      await this.createImovelPhotos(result.id, data.images);
+    if (createImovelDto?.images?.length) {
+      await this.createImovelPhotos(result.id, createImovelDto.images);
     }
 
-    if (data?.documentos?.length) {
-      await this.createImovelDocuments(result.id, data.documentos);
+    if (createImovelDto?.documentos?.length) {
+      await this.createImovelDocuments(result.id, createImovelDto.documentos);
     }
 
     return result;
@@ -172,7 +170,7 @@ export class ImoveisService {
     searchTerm: string,
     page: number = 1,
     pageSize: number = DEFAULT_PAGE_SIZE,
-    tipoImovel: ImovelTipo | null | undefined,
+    tipoImovel: number | null | undefined,
     exclude: string | null,
   ): Promise<BasePaginationData<Imovel>> {
     const skip = page > 1 ? (page - 1) * pageSize : 0;
@@ -245,7 +243,7 @@ export class ImoveisService {
         },
       ],
       AND: [
-        ((tipoImovel === null || tipoImovel === undefined) ? {} : { tipo: { equals: tipoImovel } }),
+        ((tipoImovel === null || tipoImovel === undefined) ? {} : { tipoId: { equals: tipoImovel } }),
         (exclude === null ? {} : { id: { notIn: arr_id } }),
       ]
     };
@@ -322,7 +320,10 @@ export class ImoveisService {
     await this.prismaService.imovel.update({
       where: { id },
       data: {
-        ...imovelData,
+        description: data.description,
+        status: data.status,
+        finalidade: data.finalidade,
+        porcentagem_lucro_imobiliaria: data.porcentagem_lucro_imobiliaria,
         valor_aluguel: data.valor_aluguel,
         valor_venda: data.valor_venda,
         valor_condominio: data.valor_condominio,
@@ -330,6 +331,7 @@ export class ImoveisService {
         valor_iptu: data.valor_iptu,
         valor_taxa_lixo: data.valor_taxa_lixo,
 
+        tipo: data.tipoId ? { connect: { id: data.tipoId } } : undefined,
         //if we have any address data, update it
         endereco:
           logradouro ||

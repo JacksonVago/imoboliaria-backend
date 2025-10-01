@@ -1,4 +1,4 @@
-import { ImovelStatus, ImovelTipo } from '@prisma/client';
+import { ImovelStatus } from '@prisma/client';
 import { Transform } from 'class-transformer';
 import { IsNumber, IsOptional } from 'class-validator';
 
@@ -19,7 +19,7 @@ export class BaseGetPaginatedQueryDto {
   search?: string;
 
   @IsOptional()
-  tipo?: ImovelTipo | null;
+  tipo?: number | null;
 
   @IsOptional()
   exclude?: string;

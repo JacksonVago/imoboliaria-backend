@@ -9,6 +9,9 @@ import {
 
 export class UpdateUserDto {
   @IsString()
+  login: string;
+
+  @IsString()
   @IsOptional()
   name: string;
 
@@ -17,7 +20,7 @@ export class UpdateUserDto {
   email?: string;
 
   @IsStrongPassword()
-  @IsOptional()
+  @IsString()
   password: string;
 
   @IsArray()

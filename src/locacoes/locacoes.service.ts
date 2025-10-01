@@ -288,7 +288,6 @@ export class LocacaoService {
       ]
     };
 
-    console.log('WHERE LOCACAO', where.AND);
     const [data, total] = await this.prismaService.$transaction([
       this.prismaService.locacao.findMany({
         where,
@@ -316,8 +315,6 @@ export class LocacaoService {
       this.prismaService.locacao.count({ where }),
     ]);
 
-    console.log('DATA LOCACAO', data.length);
-    console.log('DATA LOCACAO', data);
     const totalPages = Math.ceil(total / pageSize);
     return {
       data,

@@ -13,10 +13,22 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model ImovelTipo {
+  id        Int          @id @default(autoincrement())
+  name      String       @unique
+  status    PessoaStatus @default(ATIVA)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  imoveis   Imovel[]
+
+  @@map("imovel_tipo")
+}
+
 model User {
   id          String       @id @default(uuid())
+  login       String       @unique
   name        String
-  email       String       @unique
+  email       String
   password    String
   role        UserRole     @default(COLLABORATOR)
   permissions Permission[]
@@ -28,6 +40,34 @@ model User {
   // loginHistory LoginHistory[]
 
   @@map("users")
+}
+
+//Configuracões da empresa
+model Empresa {
+  id                        Int          @id @default(autoincrement())
+  nome                      String
+  cnpj                      String       @unique
+  endereco                  Endereco     @relation(fields: [enderecoId], references: [id])
+  enderecoId                Int
+  telefone                  String?
+  email                     String?
+  status                    PessoaStatus @default(ATIVA)
+  avisosReajusteLocacao     Int          @default(30) //Número de dias para avisos de reajustes de locação
+  avisosRenovacaoContrato   Int          @default(30) //Número de dias para avisos de renovação de contratos
+  avisosSeguroFianca        Int          @default(30) //Número de dias para avisos de seguro fiança
+  avisosSeguroIncendio      Int          @default(30) //Número de dias para avisos de seguro incêndio
+  avisosTituloCapitalizacao Int          @default(30) //Número de dias para avisos de título de capitalização
+  avisosDepositoCalcao      Int          @default(30) //Número de dias para avisos de depósito caução
+  porcentagemComissao       Float        @default(8) //Porcentagem de comissão da imobiliária
+  emiteBoleto               String       @default("N") //Emite boleto S/N
+  valorTaxaBoleto           Float        @default(5) //Valor da taxa de boleto
+  emissaoBoletoAntecedencia Int          @default(5) //Número de dias de antecedência para emissão de boletos  
+  porcentagemMultaAtraso    Float        @default(2) //Porcentagem de multa por atraso no pagamento
+  porcentagemJurosAtraso    Float        @default(0.1) //Porcentagem de juros por atraso no pagamento  
+  createdAt                 DateTime     @default(now())
+  updatedAt                 DateTime     @updatedAt
+
+  @@map("empresas")
 }
 
 //migrate to it's instead of proprietario and locatario
@@ -182,7 +222,8 @@ model Imovel {
   // title       String //Título do imóvel
   status      ImovelStatus //Status do imóvel (disponível, alugado, vendido, indisponível)
   description String? //Descrição do imóvel
-  tipo        ImovelTipo //Tipo do imóvel (casa, apartamento, terreno)
+  tipo        ImovelTipo?      @relation(fields: [tipoId], references: [id])
+  tipoId      Int? //Tipo do imóvel (casa, apartamento, terreno)
   finalidade  ImovelFinalidade //Finalidade do imóvel (aluguel, venda ou ambos)
 
   porcentagem_lucro_imobiliaria Float //Porcentagem da imobiliária
@@ -261,9 +302,10 @@ model Endereco {
   cep         String
   imoveis     Imovel[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   pessoas   Pessoa[]
+  empresa   Empresa[]
 
   @@map("enderecos")
 }
@@ -312,7 +354,7 @@ model Pagamento {
   dataPagamento          DateTime //Data do pagamento 
   diaVencimentoPagamento DateTime
 
-  valor                Float //Valor do pagamento
+  valor                Float //Valor do pagamento  
   comprovantePagamento Anexo? @relation(fields: [anexoId], references: [id]) //Comprovante de pagamento
 
   // locacao              Locacao  @relation(fields: [locacaoId], references: [id])
@@ -412,12 +454,6 @@ enum LocacaoStatus {
   ATIVA
   ENCERRADA
   AGUARDANDO_DOCUMENTOS
-}
-
-enum ImovelTipo {
-  CASA
-  APARTAMENTO
-  TERRENO
 }
 
 enum PessoaStatus {

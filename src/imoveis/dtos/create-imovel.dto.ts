@@ -1,6 +1,6 @@
 import { EnderecoDto } from '@/common/interfaces/dtos/endereco.dto';
-import { ImovelFinalidade, ImovelStatus, ImovelTipo, Locacao, Proprietario } from '@prisma/client';
-import { Type } from 'class-transformer';
+import { ImovelFinalidade, ImovelStatus, Locacao, Proprietario } from '@prisma/client';
+import { Transform, Type } from 'class-transformer';
 import { IsArray, IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 import {
   HasMimeType,
@@ -18,8 +18,9 @@ export class CreateImovelDto extends EnderecoDto {
   @IsOptional()
   description?: string;
 
-  @IsEnum(ImovelTipo)
-  tipo: ImovelTipo = ImovelTipo.CASA;
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  tipoId: number;
 
   @IsEnum(ImovelFinalidade)
   finalidade: ImovelFinalidade = ImovelFinalidade.AMBOS;

@@ -1,12 +1,12 @@
 import { Body, Controller, HttpCode, Post } from '@nestjs/common';
-import { IsEmail, IsString, IsStrongPassword } from 'class-validator';
+import { IsString, IsStrongPassword } from 'class-validator';
 import { AuthService } from '../auth.service';
 import { Roles } from '../decorators/roles.decorator';
 import { Role } from '../enums/roles.enum';
 
 export class AuthenticateUserDTO {
-  @IsEmail()
-  email: string;
+  @IsString()
+  login: string;
 
   @IsString()
   @IsStrongPassword({})
@@ -22,8 +22,8 @@ export class AuthenticateUserController {
   @HttpCode(200)
   async handle(@Body() data: AuthenticateUserDTO) {
 
-    const { email, password } = data;
-    const result = await this.authService.authenticateUser(email, password);
+    const { login, password } = data;
+    const result = await this.authService.authenticateUser(login, password);
     return {
       access_token: result,
     };

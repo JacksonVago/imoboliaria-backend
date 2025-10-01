@@ -12,12 +12,12 @@ export class AuthService {
   constructor(
     private jwtService: JwtService,
     private prismaService: PrismaService,
-  ) {}
+  ) { }
 
-  async validateUser(email: string, password: string): Promise<any> {
+  async validateUser(login: string, password: string): Promise<any> {
     const user = await this.prismaService.user.findUnique({
       where: {
-        email,
+        login,
       },
     });
 
@@ -36,10 +36,10 @@ export class AuthService {
   //   };
   // }
 
-  async authenticateUser(email: string, password: string) {
+  async authenticateUser(login: string, password: string) {
     const user = await this.prismaService.user.findUnique({
       where: {
-        email,
+        login,
       },
     });
 
