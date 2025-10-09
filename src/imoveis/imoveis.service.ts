@@ -68,6 +68,7 @@ export class ImoveisService {
         observacoes: true,
         imovelPhotos: true,
         documentos: true,
+        tipo: { select: { id: true, name: true } }
       },
     });
 
@@ -156,6 +157,7 @@ export class ImoveisService {
         },
         documentos: true,
         observacoes: true,
+        tipo: { select: { id: true, name: true } },
       },
     });
 
@@ -256,6 +258,7 @@ export class ImoveisService {
           endereco: true,
           observacoes: true,
           imovelPhotos: true,
+          tipo: { select: { id: true, name: true } },
         },
         where,
       }),
@@ -289,6 +292,7 @@ export class ImoveisService {
     const data = await this.prismaService.imovel.findMany({
       include: {
         endereco: true,
+        tipo: { select: { id: true, name: true } },
       },
       where,
     });
@@ -354,7 +358,7 @@ export class ImoveisService {
             }
             : undefined,
       },
-      include: { endereco: true, imovelPhotos: true, observacoes: true },
+      include: { endereco: true, imovelPhotos: true, observacoes: true, tipo: { select: { id: true, name: true } } },
     });
     //check if we have a new valores to gerenate ImovelValorHistorico
 
@@ -497,6 +501,7 @@ export class ImoveisService {
             locatarios: true,
           },
         },
+        tipo: { select: { id: true, name: true } },
       },
     });
 

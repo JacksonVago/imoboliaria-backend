@@ -187,8 +187,14 @@ export class EmpresasService {
     return result;
   }
 
-  async get() {
-    return await this.PrismaService.imovelTipo.findMany({
+  async get(id: number) {
+    return await this.PrismaService.empresa.findUnique({
+      where: {
+        id: id,
+      },
+      include: {
+        endereco: true
+      }
     });
   }
 

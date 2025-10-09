@@ -3,7 +3,9 @@ import { Role } from '@/auth/enums/roles.enum';
 import { EnderecoDto } from '@/common/interfaces/dtos/endereco.dto';
 import { Body, Controller, Get, Param, Post, Put } from '@nestjs/common';
 import { PessoaStatus } from '@prisma/client';
+import { Transform } from 'class-transformer';
 import { IsEnum, IsInt, IsNumber, IsOptional, IsString } from 'class-validator';
+import { FormDataRequest } from 'nestjs-form-data';
 import { EmpresasService } from './empresas.service';
 
 export class CreateEmpresaDto extends EnderecoDto {
@@ -19,45 +21,40 @@ export class CreateEmpresaDto extends EnderecoDto {
   @IsString()
   email: string;
 
-  @IsString()
-  endereco: string;
-
-  @IsString()
-  cidade: string;
-
-  @IsString()
-  estado: string;
-
-  @IsString()
-  cep: string;
-
   @IsEnum(PessoaStatus)
   status: PessoaStatus;
 
+  @Transform(({ value }) => Number(value))
   @IsInt()
   @IsOptional()
   avisosReajusteLocacao: number;
 
+  @Transform(({ value }) => Number(value))
   @IsInt()
   @IsOptional()
   avisosRenovacaoContrato: number;
 
+  @Transform(({ value }) => Number(value))
   @IsInt()
   @IsOptional()
   avisosSeguroFianca: number;
 
+  @Transform(({ value }) => Number(value))
   @IsInt()
   @IsOptional()
   avisosSeguroIncendio: number;
 
+  @Transform(({ value }) => Number(value))
   @IsInt()
   @IsOptional()
   avisosTituloCapitalizacao: number;
 
+  @Transform(({ value }) => Number(value))
   @IsInt()
   @IsOptional()
   avisosDepositoCalcao: number;
 
+  @Transform(({ value }) => Number(value))
   @IsNumber()
   @IsOptional()
   porcentagemComissao: number;
@@ -66,18 +63,22 @@ export class CreateEmpresaDto extends EnderecoDto {
   @IsOptional()
   emiteBoleto: string;
 
+  @Transform(({ value }) => Number(value))
   @IsNumber()
   @IsOptional()
   valorTaxaBoleto: number;
 
+  @Transform(({ value }) => Number(value))
   @IsInt()
   @IsOptional()
   emissaoBoletoAntecedencia: number;
 
+  @Transform(({ value }) => Number(value))
   @IsNumber()
   @IsOptional()
   porcentagemMultaAtraso: number;
 
+  @Transform(({ value }) => Number(value))
   @IsNumber()
   @IsOptional()
   porcentagemJurosAtraso: number;
@@ -86,7 +87,7 @@ export class CreateEmpresaDto extends EnderecoDto {
 
 export const EMPRESA_ROUTES = {
   CREATE: '/',
-  GET: '/',
+  GET: '/:id',
   UPDATE: '/:id',
 };
 
@@ -106,12 +107,14 @@ export class EmpresasController {
 
   @Post(EMPRESA_ROUTES.CREATE)
   @Roles(Role.ADMIN)
+  @FormDataRequest()
   create(@Body() createEmpresaDto: CreateEmpresaDto) {
     return this.EmpresasService.createUser(createEmpresaDto);
   }
 
   @Put(EMPRESA_ROUTES.UPDATE)
   @Roles(Role.ADMIN)
+  @FormDataRequest()
   update(
     @Param() { id }: BaseParamsByStringIdDto,
     @Body() data: CreateEmpresaDto,
@@ -122,8 +125,8 @@ export class EmpresasController {
 
   @Get(EMPRESA_ROUTES.GET)
   @Roles(Role.ADMIN)
-  async getTipo() {
-    return await this.EmpresasService.get();
+  async get(@Param() { id }: BaseParamsByStringIdDto,) {
+    return await this.EmpresasService.get(Number(id));
   }
 
 

@@ -377,6 +377,12 @@ enum Permission {
   //can do everything
   ALL
 
+  //Tipo Imovel
+  CREATE_TIPO
+  UPDATE_TIPO
+  DELETE_TPO
+  VIEW_TIPOS
+
   //Imoveis
   CREATE_IMOVEL
   UPDATE_IMOVEL

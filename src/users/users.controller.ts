@@ -3,44 +3,9 @@ import { Roles } from '@/auth/decorators/roles.decorator';
 import { Role } from '@/auth/enums/roles.enum';
 import { UserPayload } from '@/auth/estrategies/jwt.strategy';
 import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
-import { Permission } from '@prisma/client';
-import { IsArray, IsEnum, IsOptional, IsString, IsStrongPassword } from 'class-validator';
-import { UpdateUserDto } from './dtos/update-user.dto';
+import { IsString } from 'class-validator';
+import { CreateAdminUserDto, CreateUserDto } from './dtos/users.dto';
 import { UsersService } from './users.service';
-
-export class CreateUserDto {
-  @IsString()
-  login: string;
-
-  @IsString()
-  name: string;
-
-  @IsString()
-  @IsOptional()
-  email?: string;
-
-  @IsStrongPassword()
-  password: string;
-
-  @IsArray()
-  @IsOptional()
-  @IsEnum(Permission, { each: true })
-  permissions: Permission[];
-}
-
-export class CreateAdminUserDto {
-  @IsString()
-  login: string;
-
-  @IsString()
-  name: string;
-
-  @IsString()
-  email?: string;
-
-  @IsStrongPassword()
-  password: string;
-}
 
 export const USER_ROUTES = {
   CREATE: '/',
@@ -77,7 +42,7 @@ export class UsersController {
   @Roles(Role.ADMIN)
   update(
     @Param() { id }: BaseParamsByStringIdDto,
-    @Body() data: UpdateUserDto,
+    @Body() data: CreateUserDto,
   ) {
     return this.UsersService.updateUser(id, data);
   }
