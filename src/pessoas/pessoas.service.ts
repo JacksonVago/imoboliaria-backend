@@ -100,7 +100,7 @@ export class PessoasService {
 
         return this.prismaService.genericAnexo.create({
           data: {
-            tipo_arquivo: fileType,
+            tipoArquivo: fileType,
             url,
             type: file.mimetype,
             name: file.originalName,
@@ -134,6 +134,7 @@ export class PessoasService {
             imovel: {
               include: {
                 endereco: true,
+                tipo: true,
               }
             },
           },
@@ -144,7 +145,8 @@ export class PessoasService {
               include: {
                 imovel: {
                   include: {
-                    endereco: true
+                    endereco: true,
+                    tipo: true,
                   }
                 },
                 fiadores: {
@@ -169,6 +171,7 @@ export class PessoasService {
                 imovel: {
                   include: {
                     endereco: true,
+                    tipo: true,
                   }
                 }
               }
@@ -350,6 +353,8 @@ export class PessoasService {
               imovel: true,
             },
           },
+          locatarios: true,
+          fiador: true,
         },
         skip,
         take: pageSize,
@@ -405,14 +410,14 @@ export class PessoasService {
     diaVencimentoPagamento,
     imovelId,
     locatarioId,
-    valor_aluguel,
+    valorAluguel,
   }: {
     locatarioId: number;
     imovelId: number;
     dataInicio: Date;
     dataFim: Date;
     diaVencimentoPagamento: number;
-    valor_aluguel: number;
+    valorAluguel: number;
   }) {
     const dateNow = new Date();
     const payments = [];
@@ -443,7 +448,7 @@ export class PessoasService {
 
       payments.push({
         dataPagamento: new Date(nextPaymentDate), // Copia a data atual para evitar mutações
-        valorPago: valor_aluguel,
+        valorPago: valorAluguel,
         locatarioId,
         imovelId,
       });

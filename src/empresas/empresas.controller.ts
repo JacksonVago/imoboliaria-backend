@@ -83,6 +83,11 @@ export class CreateEmpresaDto extends EnderecoDto {
   @IsOptional()
   porcentagemJurosAtraso: number;
 
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  tipoId: number;
+
 }
 
 export const EMPRESA_ROUTES = {
@@ -109,7 +114,7 @@ export class EmpresasController {
   @Roles(Role.ADMIN)
   @FormDataRequest()
   create(@Body() createEmpresaDto: CreateEmpresaDto) {
-    return this.EmpresasService.createUser(createEmpresaDto);
+    return this.EmpresasService.create(createEmpresaDto);
   }
 
   @Put(EMPRESA_ROUTES.UPDATE)
@@ -126,7 +131,14 @@ export class EmpresasController {
   @Get(EMPRESA_ROUTES.GET)
   @Roles(Role.ADMIN)
   async get(@Param() { id }: BaseParamsByStringIdDto,) {
-    return await this.EmpresasService.get(Number(id));
+    if (id !== '0') {
+      const ret_get = await this.EmpresasService.get(Number(id));
+      return ret_get;
+    }
+    else {
+      const ret_getMany = await this.EmpresasService.getMany();
+      return ret_getMany[0];
+    }
   }
 
 

@@ -23,49 +23,25 @@ export class CreateImovelDto extends EnderecoDto {
   tipoId: number;
 
   @IsEnum(ImovelFinalidade)
+  @IsOptional()
   finalidade: ImovelFinalidade = ImovelFinalidade.AMBOS;
 
   @Type(() => Number)
   @IsNumber()
-  porcentagem_lucro_imobiliaria: number;
+  porcentagemLucroImobiliaria: number;
 
   @Type(() => Number)
   @IsNumber()
   @IsOptional()
-  valor_iptu?: number;
-
-  @Type(() => Number)
-  @IsNumber()
-  @IsOptional()
-  valor_condominio?: number;
-
-  @Type(() => Number)
-  @IsNumber()
-  @IsOptional()
-  valor_aluguel?: number;
-
-  @Type(() => Number)
-  @IsNumber()
-  @IsOptional()
-  valor_venda?: number;
-
-  @Type(() => Number)
-  @IsNumber()
-  @IsOptional()
-  valor_agua?: number;
-
-  @Type(() => Number)
-  @IsNumber()
-  @IsOptional()
-  valor_taxa_lixo?: number;
+  valorAluguel?: number;
 
   @IsOptional()
   @IsArray()
-  proprietario?: Proprietario[]
+  proprietarios?: Proprietario[]
 
   @IsOptional()
   @IsArray()
-  locacao?: Locacao[]
+  locacoes?: Locacao[]
 
   @IsOptional()
   @IsFiles()

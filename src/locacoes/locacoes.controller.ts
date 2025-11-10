@@ -12,7 +12,7 @@ import {
   Query
 } from '@nestjs/common';
 import { PartialType } from '@nestjs/mapped-types';
-import { GarantiaLocacaoTypes, LocacaoStatus, Permission } from '@prisma/client';
+import { GarantiaLocacaoTypes, LocacaoStatus, LocalDeposito, Permission } from '@prisma/client';
 import { Transform } from 'class-transformer';
 import {
   IsArray,
@@ -51,7 +51,7 @@ export class CreateLocacaoDto {
 
   @Transform(({ value }) => Number(value))
   @IsInt()
-  valor_aluguel: number;
+  valorAluguel: number;
 
   @IsOptional()
   @IsEnum(LocacaoStatus)
@@ -67,7 +67,7 @@ export class CreateLocacaoDto {
 
   @Transform(({ value }) => Number(value))
   @IsInt()
-  dia_vencimento: number;
+  diaVencimento: number;
 
   @IsFiles()
   @IsOptional()
@@ -133,6 +133,20 @@ export class CreateLocacaoDto {
   @Transform(({ value }) => Number(value))
   @Min(0)
   quantidadeMeses: number;
+
+  localDeposito: LocalDeposito;
+
+  @IsString()
+  numeroApolice: string;
+
+  @Transform(({ value }) => new Date(value))
+  @IsDate()
+  vigenciaInicio: Date;
+
+  @Transform(({ value }) => new Date(value))
+  @IsDate()
+  vigenciaFim: Date;
+
 }
 
 export class UpdateLocacaoDto extends PartialType(CreateLocacaoDto) {
@@ -247,14 +261,6 @@ export class LocacaoController {
 
     return this.locacaoService.create(createLocacaoDto);
   }
-
-  /*@Get(LOCATARIO_ROUTES.findMany.route)
-  @Permissions(LOCATARIO_ROUTES.findMany.permission)
-  async findMany(@Query() data: GetProprietariosQueryDto) {
-    const { search, page, limit } = data;
-    const response = await this.locacaoService.findMany(search, page, limit);
-    return response;
-  }*/
 
   @Get(LOCACAO_ROUTES.search.route)
   @Permissions(LOCACAO_ROUTES.search.permission)

@@ -28,7 +28,10 @@ export class FilesService {
     }
   }
 
-  deleteFile(file: string): Promise<void> {
+  async deleteFile(file: string[]): Promise<void> {
+    const result = await this.supabase.storage
+      .from('imoveis_photos')
+      .remove(file);
     throw new Error('Method not implemented.');
   }
 

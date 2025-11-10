@@ -29,7 +29,7 @@ export class ProprietariosService {
       const result = await this.prismaService.proprietario.create({
         data: {
           pessoaId: data.pessoaId,
-          cota_imovel: data.cota_imovel,
+          cotaImovel: data.cotaImovel,
           imovelId: data.imovelId,
         },
         include: {
@@ -75,7 +75,7 @@ export class ProprietariosService {
 
         return this.prismaService.genericAnexo.create({
           data: {
-            tipo_arquivo: fileType,
+            tipoArquivo: fileType,
             url,
             type: file.mimetype,
             name: file.originalName,
@@ -128,7 +128,7 @@ export class ProprietariosService {
       },
       data: {
         pessoaId: data.pessoaId,
-        cota_imovel: data.cota_imovel,
+        cotaImovel: data.cotaImovel,
         imovelId: data.imovelId,
         /*imoveis: {
           //Vincular e desvincular imoveis
@@ -205,7 +205,7 @@ export class ProprietariosService {
     const data = await this.prismaService.proprietario.create({
       data: {
         pessoaId: proprietarioId,
-        cota_imovel: linkDto.cota_imovel,
+        cotaImovel: linkDto.cotaImovel,
         imovelId: imovelId,
       },
       include: {

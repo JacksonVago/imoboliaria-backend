@@ -11,7 +11,7 @@ export class CreateProprietarioDto {
 
   @Transform(({ value }) => Number(value))
   @IsNumber()
-  cota_imovel: number;
+  cotaImovel: number;
 
   @Transform(({ value }) => Number(value))
   @IsInt()

@@ -6,7 +6,7 @@ import { CreateTipoDto } from './tipoimovel.controller';
 @Injectable()
 export class TipoImovelService {
   constructor(private PrismaService: PrismaService) { }
-  async createUser(createTipoDto: CreateTipoDto) {
+  async createTipo(createTipoDto: CreateTipoDto) {
     const { name } = createTipoDto;
     const checkIfUserExists = await this.PrismaService.imovelTipo.findUnique({
       where: {
@@ -15,7 +15,7 @@ export class TipoImovelService {
     });
 
     if (checkIfUserExists) {
-      throw new ConflictException(' imovel type exists');
+      throw new ConflictException(' tipo type exists');
     }
 
     return await this.PrismaService.imovelTipo.create({

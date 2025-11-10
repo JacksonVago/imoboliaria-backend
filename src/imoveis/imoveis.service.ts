@@ -39,11 +39,8 @@ export class ImoveisService {
         description: createImovelDto.description,
         status: createImovelDto.status,
         finalidade: createImovelDto.finalidade,
-        porcentagem_lucro_imobiliaria: createImovelDto.porcentagem_lucro_imobiliaria,
-        valor_iptu: createImovelDto.valor_iptu,
-        valor_condominio: createImovelDto.valor_condominio,
-        valor_aluguel: createImovelDto.valor_aluguel,
-        valor_venda: createImovelDto.valor_venda,
+        porcentagemLucroImobiliaria: createImovelDto.porcentagemLucroImobiliaria,
+        valorAluguel: createImovelDto.valorAluguel,
 
         //TODO: add observacoes
         //TODO: add imovelPhotos
@@ -178,7 +175,7 @@ export class ImoveisService {
     const skip = page > 1 ? (page - 1) * pageSize : 0;
     let arr_id: number[] = [];
 
-    if (exclude !== null && exclude !== undefined) {
+    if (exclude !== null && exclude !== undefined && exclude.length > 0) {
       exclude.split(',').map((id) => {
         if (id !== '') {
           arr_id.push(parseFloat(id));
@@ -245,8 +242,130 @@ export class ImoveisService {
         },
       ],
       AND: [
-        ((tipoImovel === null || tipoImovel === undefined) ? {} : { tipoId: { equals: tipoImovel } }),
-        (exclude === null ? {} : { id: { notIn: arr_id } }),
+        ((tipoImovel === null || tipoImovel === undefined) ? {} : { tipoId: { equals: Number(tipoImovel) } }),
+        (arr_id.length === 0 ? {} : { id: { notIn: arr_id } }),
+      ]
+    };
+
+    const [data, totalItems] = await this.prismaService.$transaction([
+      this.prismaService.imovel.findMany({
+        take: pageSize,
+        skip,
+        include: {
+          endereco: true,
+          observacoes: true,
+          imovelPhotos: true,
+          tipo: { select: { id: true, name: true } },
+          locacoes: {
+            include: {
+              locatarios: {
+                include: {
+                  pessoa: true,
+                }
+              }
+            }
+          }
+        },
+        where,
+      }),
+      this.prismaService.imovel.count({
+        where,
+      }),
+    ]);
+
+    const totalPages = Math.ceil(totalItems / pageSize);
+    return {
+      data,
+      page,
+      pageSize,
+      currentPosition: skip + data.length,
+      totalPages,
+    };
+  }
+
+  //Persquisa imóveis para locação
+  async findManyLocacao(
+    searchTerm: string,
+    page: number = 1,
+    pageSize: number = DEFAULT_PAGE_SIZE,
+    tipoImovel: number | null | undefined,
+    exclude: string | null,
+  ): Promise<BasePaginationData<Imovel>> {
+    const skip = page > 1 ? (page - 1) * pageSize : 0;
+    let arr_id: number[] = [];
+
+    if (exclude !== null && exclude !== undefined && exclude.length > 0) {
+      exclude.split(',').map((id) => {
+        if (id !== '') {
+          arr_id.push(parseFloat(id));
+        }
+      })
+    }
+
+    if (tipoImovel !== undefined) {
+      if (tipoImovel.toString() === 'undefined') {
+        tipoImovel = undefined;
+      }
+    }
+
+
+    const where: Prisma.ImovelWhereInput = {
+      OR: [
+        {
+          endereco: {
+            bairro: {
+              contains: searchTerm,
+              mode: 'insensitive',
+            },
+          },
+        },
+        {
+          endereco: {
+            cidade: {
+              contains: searchTerm,
+              mode: 'insensitive',
+            },
+          },
+        },
+        {
+          endereco: {
+            estado: {
+              contains: searchTerm,
+              mode: 'insensitive',
+            },
+          },
+        },
+        {
+          endereco: {
+            logradouro: {
+              contains: searchTerm,
+              mode: 'insensitive',
+            },
+          },
+        },
+        {
+          endereco: {
+            numero: {
+              contains: searchTerm,
+              mode: 'insensitive',
+            },
+          },
+        },
+        {
+          endereco: {
+            cep: {
+              contains: searchTerm,
+              mode: 'insensitive',
+            },
+          },
+        },
+      ],
+      AND: [
+        ((tipoImovel === null || tipoImovel === undefined) ? {} : { tipoId: { equals: Number(tipoImovel) } }),
+        (arr_id.length === 0 ? {} : { id: { notIn: arr_id } }),
+        {
+          status: ImovelStatus.DISPONIVEL,
+        }
       ]
     };
 
@@ -327,13 +446,8 @@ export class ImoveisService {
         description: data.description,
         status: data.status,
         finalidade: data.finalidade,
-        porcentagem_lucro_imobiliaria: data.porcentagem_lucro_imobiliaria,
-        valor_aluguel: data.valor_aluguel,
-        valor_venda: data.valor_venda,
-        valor_condominio: data.valor_condominio,
-        valor_agua: data.valor_agua,
-        valor_iptu: data.valor_iptu,
-        valor_taxa_lixo: data.valor_taxa_lixo,
+        porcentagemLucroImobiliaria: data.porcentagemLucroImobiliaria,
+        valorAluguel: data.valorAluguel,
 
         tipo: data.tipoId ? { connect: { id: data.tipoId } } : undefined,
         //if we have any address data, update it
@@ -362,67 +476,13 @@ export class ImoveisService {
     });
     //check if we have a new valores to gerenate ImovelValorHistorico
 
-    if (
-      data.valor_iptu ||
-      data.valor_condominio ||
-      data.valor_aluguel ||
-      data.valor_venda
-    ) {
-      if (data.valor_iptu) {
-        await this.prismaService.imovelValorHistorico.create({
-          data: {
-            tipo: ValorImovelTipo.IPTU,
-            valor: data.valor_iptu,
-            imovelId: id,
-          },
-        });
-      }
+    if (data.valorAluguel) {
 
-      if (data.valor_condominio) {
-        await this.prismaService.imovelValorHistorico.create({
-          data: {
-            tipo: ValorImovelTipo.CONDOMINIO,
-            valor: data.valor_condominio,
-            imovelId: id,
-          },
-        });
-      }
-
-      if (data.valor_aluguel) {
+      if (data.valorAluguel) {
         await this.prismaService.imovelValorHistorico.create({
           data: {
             tipo: ValorImovelTipo.ALUGUEL,
-            valor: data.valor_aluguel,
-            imovelId: id,
-          },
-        });
-      }
-
-      if (data.valor_venda) {
-        await this.prismaService.imovelValorHistorico.create({
-          data: {
-            tipo: ValorImovelTipo.VENDA,
-            valor: data.valor_venda,
-            imovelId: id,
-          },
-        });
-      }
-
-      if (data.valor_agua) {
-        await this.prismaService.imovelValorHistorico.create({
-          data: {
-            tipo: ValorImovelTipo.AGUA,
-            valor: data.valor_agua,
-            imovelId: id,
-          },
-        });
-      }
-
-      if (data.valor_taxa_lixo) {
-        await this.prismaService.imovelValorHistorico.create({
-          data: {
-            tipo: ValorImovelTipo.TAXA_LIXO,
-            valor: data.valor_taxa_lixo,
+            valor: data.valorAluguel,
             imovelId: id,
           },
         });
@@ -572,7 +632,7 @@ export class ImoveisService {
 
         return this.prismaService.genericAnexo.create({
           data: {
-            tipo_arquivo: fileType,
+            tipoArquivo: fileType,
             size: file.size,
             url: str_url,
             type: file.mimetype,

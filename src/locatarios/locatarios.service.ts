@@ -31,17 +31,17 @@ export class LocatariosService {
           create: {
             dataInicio: createLocatarioDto.locacao.dataInicio,
             dataFim: createLocatarioDto.locacao.dataFim,
-            valor_aluguel: createLocatarioDto.locacao.valor_aluguel,
+            valorAluguel: createLocatarioDto.locacao.valorAluguel,
             status: createLocatarioDto.locacao.status,
             imovelId: createLocatarioDto.locacao.imovelId,
-            dia_vencimento: createLocatarioDto.locacao.dia_vencimento
+            diaVencimento: createLocatarioDto.locacao.diaVencimento
           },
         },
       },
       // também retornar o endereço e a locação criados
       include: {
         locacoes: true,
-        pagamentos: true,
+        boletos: true,
       },
     });
 
@@ -306,20 +306,20 @@ export class LocatariosService {
   //   dataInicio,
   //   dataFim,
   //   diaVencimentoPagamento,
-  //   valor_aluguel,
+  //   valorAluguel,
   // }: {
   //   locatarioId: number;
   //   imovelId: number;
   //   dataInicio: Date;
   //   dataFim: Date;
   //   diaVencimentoPagamento: number;
-  //   valor_aluguel: number;
+  //   valorAluguel: number;
   // }) {
   //   await this.prismaService.locacao.create({
   //     data: {
   //       dataInicio,
   //       dataFim,
-  //       valor_aluguel,
+  //       valorAluguel,
   //       locatarioId,
   //       imovelId,
   //     },
@@ -332,7 +332,7 @@ export class LocatariosService {
   //     diaVencimentoPagamento,
   //     imovelId,
   //     locatarioId,
-  //     valor_aluguel,
+  //     valorAluguel,
   //   });
   // }
 
@@ -342,14 +342,14 @@ export class LocatariosService {
     diaVencimentoPagamento,
     imovelId,
     locatarioId,
-    valor_aluguel,
+    valorAluguel,
   }: {
     locatarioId: number;
     imovelId: number;
     dataInicio: Date;
     dataFim: Date;
     diaVencimentoPagamento: number;
-    valor_aluguel: number;
+    valorAluguel: number;
   }) {
     const dateNow = new Date();
     const payments = [];
@@ -380,7 +380,7 @@ export class LocatariosService {
 
       payments.push({
         dataPagamento: new Date(nextPaymentDate), // Copia a data atual para evitar mutações
-        valorPago: valor_aluguel,
+        valorPago: valorAluguel,
         locatarioId,
         imovelId,
       });
@@ -397,7 +397,7 @@ export class LocatariosService {
   //   id: number,
   //   dataInicio: Date,
   //   dataFim: Date,
-  //   valor_aluguel: number,
+  //   valorAluguel: number,
   //   motivo?: string,
   // ) {
   //   //TODO: ao mudar o preço do aluguel, atualizar o valor da locacao e guardar o valor antigo em um histórico
@@ -408,11 +408,11 @@ export class LocatariosService {
   //     },
   //   });
 
-  //   if (locacao.valor_aluguel !== valor_aluguel) {
+  //   if (locacao.valorAluguel !== valorAluguel) {
   //     //create a new history entry
   //     await this.prismaService.valorAluguelHistorico.create({
   //       data: {
-  //         novoValor: valor_aluguel,
+  //         novoValor: valorAluguel,
   //         locacaoId: id,
   //         motivo,
   //       },
@@ -426,7 +426,7 @@ export class LocatariosService {
   //     data: {
   //       dataInicio,
   //       dataFim,
-  //       valor_aluguel,
+  //       valorAluguel,
   //       Pagamento: {
   //         //payments are mensal
   //       },
@@ -579,10 +579,10 @@ export class LocatariosService {
       data: {
         dataInicio: new Date(),
         dataFim: new Date(),
-        valor_aluguel: 0,
+        valorAluguel: 0,
         status: LocacaoStatus.ATIVA,
         imovelId: imovelId,
-        dia_vencimento: 1,
+        diaVencimento: 1,
       },
     });
   }
@@ -608,7 +608,7 @@ export class LocatariosService {
       const {
         dataInicio,
         dataFim,
-        valor_aluguel,
+        valorAluguel,
         // locatarioId,
         // imovelId,
         documentos,
@@ -675,7 +675,7 @@ export class LocatariosService {
         data: {
           dataInicio,
           dataFim,
-          valor_aluguel,
+          valorAluguel,
           garantiaLocacaoTipo,
           /*fiadores:
             garantiaLocacaoTipo === 'FIADOR'
@@ -965,7 +965,7 @@ export class LocatariosService {
 
         return this.prismaService.genericAnexo.create({
           data: {
-            tipo_arquivo: fileType,
+            tipoArquivo: fileType,
             url,
             type: file.mimetype,
             name: file.originalName,
@@ -1006,7 +1006,7 @@ export class LocatariosService {
 
         return this.prismaService.genericAnexo.create({
           data: {
-            tipo_arquivo: fileType,
+            tipoArquivo: fileType,
             url,
             type: file.mimetype,
             name: file.originalName,

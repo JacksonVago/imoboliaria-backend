@@ -1,7 +1,7 @@
 import { PrismaService } from '@/prisma/prisma.service';
 import { ConflictException, Injectable } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
-import { hash } from 'bcryptjs';
+import { compare, hash } from 'bcryptjs';
 import { CreateUserDto } from './dtos/users.dto';
 
 @Injectable()
@@ -45,10 +45,52 @@ export class UsersService {
     });
   }
 
+  async updatePwd(id: string, data: { login: string; password: string; newpassword: string }) {
+    const hashedPasword = await hash(data.password, 10);
+    const hashedNewPasword = await hash(data.newpassword, 10);
+
+    const user = await this.PrismaService.user.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!user) {
+      throw new ConflictException('Usuário não existe');
+    }
+
+    const isPasswordValid = await compare(data.password, user.password);
+
+    if (!isPasswordValid) {
+      throw new ConflictException('Senha anterior incorreta.');
+    }
+
+    if (data.login !== user.login) {
+      throw new ConflictException('Login inválido.');
+    }
+
+    return await this.PrismaService.user.update({
+      where: {
+        id,
+      },
+      data: {
+        password: hashedNewPasword,
+      },
+    });
+  }
+
   async getUsers({ userId }: { userId: string }) {
     return await this.PrismaService.user.findFirst({
       where: {
         id: userId,
+      },
+    });
+  }
+
+  async getUserbyLogin(login: string) {
+    return await this.PrismaService.user.findFirst({
+      where: {
+        login: login,
       },
     });
   }

@@ -13,6 +13,23 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model LancamentoTipo {
+  id             Int            @id @default(autoincrement())
+  name           String         @unique
+  tipo           lancamentoTipo @default(DEBITO)
+  automatico     String         @default("S")
+  parcelas       Int            @default(0)
+  geraObservacao String         @default("N")
+  valorFixo      Float?
+  status         PessoaStatus   @default(ATIVA)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  lancamentos    Lancamento[]
+  empresas       Empresa[]
+
+  @@map("lancamentoTipos")
+}
+
 model ImovelTipo {
   id        Int          @id @default(autoincrement())
   name      String       @unique
@@ -21,7 +38,7 @@ model ImovelTipo {
   updatedAt DateTime     @updatedAt
   imoveis   Imovel[]
 
-  @@map("imovel_tipo")
+  @@map("imovelTipos")
 }
 
 model User {
@@ -44,28 +61,30 @@ model User {
 
 //Configuracões da empresa
 model Empresa {
-  id                        Int          @id @default(autoincrement())
+  id                        Int             @id @default(autoincrement())
   nome                      String
-  cnpj                      String       @unique
-  endereco                  Endereco     @relation(fields: [enderecoId], references: [id])
+  cnpj                      String          @unique
+  endereco                  Endereco        @relation(fields: [enderecoId], references: [id])
   enderecoId                Int
   telefone                  String?
   email                     String?
-  status                    PessoaStatus @default(ATIVA)
-  avisosReajusteLocacao     Int          @default(30) //Número de dias para avisos de reajustes de locação
-  avisosRenovacaoContrato   Int          @default(30) //Número de dias para avisos de renovação de contratos
-  avisosSeguroFianca        Int          @default(30) //Número de dias para avisos de seguro fiança
-  avisosSeguroIncendio      Int          @default(30) //Número de dias para avisos de seguro incêndio
-  avisosTituloCapitalizacao Int          @default(30) //Número de dias para avisos de título de capitalização
-  avisosDepositoCalcao      Int          @default(30) //Número de dias para avisos de depósito caução
-  porcentagemComissao       Float        @default(8) //Porcentagem de comissão da imobiliária
-  emiteBoleto               String       @default("N") //Emite boleto S/N
-  valorTaxaBoleto           Float        @default(5) //Valor da taxa de boleto
-  emissaoBoletoAntecedencia Int          @default(5) //Número de dias de antecedência para emissão de boletos  
-  porcentagemMultaAtraso    Float        @default(2) //Porcentagem de multa por atraso no pagamento
-  porcentagemJurosAtraso    Float        @default(0.1) //Porcentagem de juros por atraso no pagamento  
-  createdAt                 DateTime     @default(now())
-  updatedAt                 DateTime     @updatedAt
+  status                    PessoaStatus    @default(ATIVA)
+  avisosReajusteLocacao     Int             @default(30) //Número de dias para avisos de reajustes de locação
+  avisosRenovacaoContrato   Int             @default(30) //Número de dias para avisos de renovação de contratos
+  avisosSeguroFianca        Int             @default(30) //Número de dias para avisos de seguro fiança
+  avisosSeguroIncendio      Int             @default(30) //Número de dias para avisos de seguro incêndio
+  avisosTituloCapitalizacao Int             @default(30) //Número de dias para avisos de título de capitalização
+  avisosDepositoCalcao      Int             @default(30) //Número de dias para avisos de depósito caução
+  porcentagemComissao       Float           @default(8) //Porcentagem de comissão da imobiliária
+  emiteBoleto               String          @default("N") //Emite boleto S/N
+  valorTaxaBoleto           Float           @default(5) //Valor da taxa de boleto
+  lancamentoTipo            LancamentoTipo? @relation(fields: [tipoId], references: [id])
+  tipoId                    Int? //Tipo de lançamnto (TAXA DE BOLETO- deve estar cadastrado)
+  emissaoBoletoAntecedencia Int             @default(5) //Número de dias de antecedência para emissão de boletos  
+  porcentagemMultaAtraso    Float           @default(2) //Porcentagem de multa por atraso no pagamento
+  porcentagemJurosAtraso    Float           @default(0.1) //Porcentagem de juros por atraso no pagamento  
+  createdAt                 DateTime        @default(now())
+  updatedAt                 DateTime        @updatedAt
 
   @@map("empresas")
 }
@@ -92,12 +111,12 @@ model Pessoa {
 }
 
 model Proprietario {
-  id          Int    @id @default(autoincrement())
-  pessoa      Pessoa @relation(fields: [pessoaId], references: [id])
-  pessoaId    Int
-  cota_imovel Float  @default(100)
-  imovel      Imovel @relation(fields: [imovelId], references: [id])
-  imovelId    Int
+  id         Int    @id @default(autoincrement())
+  pessoa     Pessoa @relation(fields: [pessoaId], references: [id])
+  pessoaId   Int
+  cotaImovel Float  @default(100)
+  imovel     Imovel @relation(fields: [imovelId], references: [id])
+  imovelId   Int
 
   @@map("proprietarios")
 }
@@ -107,8 +126,8 @@ model Locatario {
   pessoa   Pessoa @relation(fields: [pessoaId], references: [id])
   pessoaId Int
 
-  locacoes   Locacao[]
-  pagamentos Pagamento[]
+  locacoes Locacao[]
+  boletos  Boleto[]
 
   @@map("locatarios")
 }
@@ -133,31 +152,22 @@ model ImovelValorHistorico {
   imovel         Imovel          @relation(fields: [imovelId], references: [id])
   imovelId       Int
 
-  @@map("valor_imovel_historico")
+  @@map("valorImovelHistorico")
 }
 
 model Locacao {
-  id             Int            @id @default(autoincrement())
-  dataInicio     DateTime
-  dataFim        DateTime
-  valor_aluguel  Float
-  status         LocacaoStatus  @default(ATIVA)
-  imovel         Imovel?        @relation(fields: [imovelId], references: [id])
-  imovelId       Int?
-  dia_vencimento Int
-  documentos     GenericAnexo[]
+  id            Int            @id @default(autoincrement())
+  dataInicio    DateTime
+  dataFim       DateTime
+  valorAluguel  Float
+  status        LocacaoStatus  @default(ATIVA)
+  imovel        Imovel?        @relation(fields: [imovelId], references: [id])
+  imovelId      Int?
+  diaVencimento Int
+  documentos    GenericAnexo[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  //TODO: adicionar historico de reajustes e histórico de pagamentos
-  //TODO: Add more fields, like:
-  // - deposit amount
-  // - contract details
-  // - payment method
-  // - cancellation policy
-  //TODO; add anexos like, compro
-  // Relationships
 
   // Relacionamentos
 
@@ -170,20 +180,25 @@ model Locacao {
   //Garantia deposito calcao
   garantiaDepositoCalcao      DepositoCalcao?
 
-  locatarios            Locatario[]
-  valorAluguelHistorico valorAluguelHistorico[]
-  pagamentos            Pagamento[]
-  fiadores              Fiador[]
+  //Seguro incêndio
+  seguroIncendio SeguroIncendio?
+
+  locatarios  Locatario[]
+  fiadores    Fiador[]
+  boletos     Boleto[]
+  reajustes   Reajuste[]
+  lancamentos Lancamento[]
 
   @@map("locacoes")
 }
 
 model DepositoCalcao {
-  id              Int     @id @default(autoincrement())
+  id              Int           @id @default(autoincrement())
   valorDeposito   Float
   quantidadeMeses Int
-  locacao         Locacao @relation(fields: [locacaoId], references: [id])
-  locacaoId       Int     @unique
+  localDeposito   LocalDeposito
+  locacao         Locacao       @relation(fields: [locacaoId], references: [id])
+  locacaoId       Int           @unique
 }
 
 model SeguroFianca {
@@ -193,24 +208,21 @@ model SeguroFianca {
   locacaoId    Int     @unique
 }
 
+model SeguroIncendio {
+  id             Int      @id @default(autoincrement())
+  numeroApolice  String
+  locacao        Locacao  @relation(fields: [locacaoId], references: [id])
+  locacaoId      Int      @unique
+  vigenciaInicio DateTime
+  vigenciaFim    DateTime
+}
+
 model TituloCapitalizacao {
   id           Int     @id @default(autoincrement())
   numeroTitulo String
   // Relationships
   locacao      Locacao @relation(fields: [locacaoId], references: [id])
   locacaoId    Int     @unique
-}
-
-// Histórico dos valores do aluguel
-model valorAluguelHistorico {
-  id        Int      @id @default(autoincrement())
-  locacao   Locacao  @relation(fields: [locacaoId], references: [id])
-  locacaoId Int
-  data      DateTime @default(now())
-  novoValor Decimal
-  motivo    String?
-
-  @@map("valor_aluguel_historico")
 }
 
 // //Imóvel - propriedade
@@ -222,17 +234,12 @@ model Imovel {
   // title       String //Título do imóvel
   status      ImovelStatus //Status do imóvel (disponível, alugado, vendido, indisponível)
   description String? //Descrição do imóvel
-  tipo        ImovelTipo?      @relation(fields: [tipoId], references: [id])
-  tipoId      Int? //Tipo do imóvel (casa, apartamento, terreno)
-  finalidade  ImovelFinalidade //Finalidade do imóvel (aluguel, venda ou ambos)
+  tipo        ImovelTipo       @relation(fields: [tipoId], references: [id])
+  tipoId      Int //Tipo do imóvel (casa, aparamento, terreno)
+  finalidade  ImovelFinalidade @default(ALUGUEL) //Finalidade do imóvel (aluguel, venda ou ambos)
 
-  porcentagem_lucro_imobiliaria Float //Porcentagem da imobiliária
-  valor_iptu                    Float? //Valor do IPTU
-  valor_condominio              Float? //Valor do condomínio
-  valor_aluguel                 Float? //Valor do aluguel
-  valor_venda                   Float? //Valor de venda
-  valor_agua                    Float? //Valor da água
-  valor_taxa_lixo               Float? //Valor da taxa de lixo
+  porcentagemLucroImobiliaria Float //Porcentagem da imobiliária
+  valorAluguel                Float? @default(0) //Valor do aluguel inicial da locação
 
   endereco   Endereco @relation(fields: [enderecoId], references: [id])
   enderecoId Int
@@ -259,7 +266,7 @@ model ImovelPhoto {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@map("imovel_photos")
+  @@map("imovelPhotos")
 }
 
 model Observacao {
@@ -273,7 +280,7 @@ model Observacao {
   imovel    Imovel @relation(fields: [imovelId], references: [id])
   imovelId  Int
 
-  ObservacaoAnexo ObservacaoAnexo[] //Anexos relacionados à observação
+  observacaoAnexos ObservacaoAnexo[] //Anexos relacionados à observação
 
   @@map("observacoes")
 }
@@ -288,7 +295,7 @@ model ObservacaoAnexo {
   observacao   Observacao @relation(fields: [observacaoId], references: [id])
   observacaoId Int
 
-  @@map("observacao_anexos")
+  @@map("observacaoAnexos")
 }
 
 model Endereco {
@@ -305,32 +312,20 @@ model Endereco {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   pessoas   Pessoa[]
-  empresa   Empresa[]
+  empresas  Empresa[]
 
   @@map("enderecos")
 }
 
-model Anexo {
-  id         Int         @id @default(autoincrement())
-  url        String
-  tipo       String
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  pagamentos Pagamento[]
-
-  // Relationships
-  @@map("anexos")
-}
-
 model GenericAnexo {
-  id           Int      @id @default(autoincrement())
-  url          String
-  name         String?
-  size         Int?
-  type         String?
-  tipo_arquivo String // Ex.: "imagem", "documento"
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          Int      @id @default(autoincrement())
+  url         String
+  name        String?
+  size        Int?
+  type        String?
+  tipoArquivo String // Ex.: "imagem", "documento"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   pessoa    Pessoa?  @relation(fields: [pessoaId], references: [id])
   pessoaId  Int?
@@ -338,11 +333,13 @@ model GenericAnexo {
   locacaoId Int?
   imovel    Imovel?  @relation(fields: [imovelId], references: [id])
   imovelId  Int?
+  pagamento Boleto?  @relation(fields: [boletoId], references: [id])
+  boletoId  Int?
 
-  @@map("generic_anexos")
+  @@map("genericAnexos")
 }
 
-model Pagamento {
+model Boleto {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -350,27 +347,84 @@ model Pagamento {
   locacao   Locacao @relation(fields: [locacaoId], references: [id])
   locacaoId Int
 
-  statusPagamento        String //Status do pagamento (pendente, pago, atrasado)
-  dataPagamento          DateTime //Data do pagamento 
-  diaVencimentoPagamento DateTime
+  status         BoletoStatus @default(PENDENTE) //Status do boleto (pendente, pago, atrasado...)  
+  dataEmissao    DateTime //date de emissão do boleto
+  dataVencimento DateTime //Data de vencimento do boleto
+  dataPagamento  DateTime? //Data de pagamento do boleto
 
-  valor                Float //Valor do pagamento  
-  comprovantePagamento Anexo? @relation(fields: [anexoId], references: [id]) //Comprovante de pagamento
+  valorOriginal Float //Valor do boleto
+  valorPago     Float? //Valor do boleto
 
-  // locacao              Locacao  @relation(fields: [locacaoId], references: [id])
-  // locacaoId            Int
-  // dataPagamento        DateTime
-  // valor                Decimal
-  // statusPagamento      String
-  // comprovantePagamento String?
-
-  // createdAt   DateTime   @default(now())
-  // updatedAt   DateTime   @updatedAt
-  // Locatario   Locatario? @relation(fields: [locatarioId], references: [id])
-  // locatarioId Int?
   locatario   Locatario? @relation(fields: [locatarioId], references: [id])
   locatarioId Int?
-  anexoId     Int?
+
+  documentos       GenericAnexo[]
+  lancamentos      Lancamento[]
+  boletosBancarios BoletoBancario[]
+
+  @@map("boletos")
+}
+
+model Reajuste {
+  id                Int      @id @default(autoincrement())
+  percentualRejuste Float
+  valorAluguel      Float
+  valorRejuste      Float
+  dataReajuste      DateTime
+  observacao        String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  locacao   Locacao @relation(fields: [locacaoId], references: [id])
+  locacaoId Int
+
+  @@map("reajustes")
+}
+
+model Lancamento {
+  id                   Int              @id @default(autoincrement())
+  lancamentotipo       LancamentoTipo   @relation(fields: [tipoId], references: [id])
+  parcela              Int? //Parcela do lançamento no caso de lançamento com número de parcelas
+  tipoId               Int //Tipo de lançamnto (IPTU, CONDOMINIO, ÁGUA, LUZ, etc..)
+  valorLancamento      Float //Valor do lançamento
+  dataLancamento       DateTime
+  vencimentoLancamento DateTime
+  observacao           String
+  status               lancamentoStatus @default(ABERTO)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  locacao   Locacao @relation(fields: [locacaoId], references: [id])
+  locacaoId Int
+  boleto    Boleto? @relation(fields: [boletoId], references: [id])
+  boletoId  Int?
+
+  @@map("lancamentos")
+}
+
+model BoletoBancario {
+  id              Int       @id @default(autoincrement())
+  boleto          Boleto    @relation(fields: [boletoId], references: [id])
+  boletoId        Int
+  valor           Float //Valor do boleto
+  valorPago       Float //Valor pago no boleto
+  dataBoleto      DateTime //Emissao do boleto
+  dataVencimento  DateTime //Vencimento do boleto
+  dataPagamento   DateTime? //Data de pagamento do boleto
+  formaPix        String //Forma de pagamento PIX para recebimento
+  codigoBarras    String
+  linhaDigitavel  String
+  nossoNumero     String
+  urlBoleto       String //URL para visualização do boleto
+  registrado      String //S/N Informa se ocorreu o registro do boleto
+  emvPIX          String //Código EMV para pagamento via PIX
+  metodoPagamento String //Método de pagamento utilizado
+  status          String //Status do boleto
+  observacao      String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("boletosBancarios")
 }
 
 enum Permission {
@@ -382,6 +436,12 @@ enum Permission {
   UPDATE_TIPO
   DELETE_TPO
   VIEW_TIPOS
+
+  //Tipo lancamentos
+  CREATE_TIPO_LANC
+  UPDATE_TIPO_LANC
+  DELETE_TPO_LANC
+  VIEW_TIPOS_LANC
 
   //Imoveis
   CREATE_IMOVEL
@@ -413,6 +473,24 @@ enum Permission {
   DELETE_LOCACAO
   VIEW_LOCACOES
 
+  //Lancamentos
+  CREATE_LANCAMENTO
+  UPDATE_LANCAMENTO
+  DELETE_LANCAMENTO
+  VIEW_LANCAMENTOS
+
+  //Pagamentos
+  CREATE_PAGAMENTO
+  UPDATE_PAGAMENTO
+  DELETE_PAGAMENTO
+  VIEW_PAGAMENTOS
+
+  //Reajustes
+  CREATE_REAJUSTE
+  UPDATE_REAJUSTE
+  DELETE_REAJUSTE
+  VIEW_REAJUSTES
+
   // CREATE_USER
   // VIEW_PROPERTIES
   // MANAGE_LISTINGS
@@ -437,6 +515,7 @@ enum ImovelStatus {
   ALUGADO
   VENDIDO
   INDISPONIVEL
+  INATIVO
 }
 
 enum ValorImovelTipo {
@@ -467,8 +546,31 @@ enum PessoaStatus {
   CANCELADA
 }
 
+enum lancamentoTipo {
+  DEBITO
+  CREDITO
+}
+
+enum lancamentoStatus {
+  ABERTO
+  CONFIRMADO
+}
+
 enum ImovelFinalidade {
   ALUGUEL
   VENDA
   AMBOS
+}
+
+enum BoletoStatus {
+  PENDENTE
+  CONFIRMADO
+  ATRASADO
+  PAGO
+  CANCELADO
+}
+
+enum LocalDeposito {
+  IMOBILIARIA
+  PROPRIETARIO
 }

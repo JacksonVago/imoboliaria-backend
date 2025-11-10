@@ -34,6 +34,11 @@ export const IMOVEIS_ROUTES: BaseRoutes = {
   },
   searchStatusType: {
     name: 'Search Imoveis Status',
+    route: '/status/',
+    permission: Permission.VIEW_IMOVELS,
+  },
+  searchLocacao: {
+    name: 'Search Imoveis locacao',
     route: '/locacao/',
     permission: Permission.VIEW_IMOVELS,
   },
@@ -69,6 +74,14 @@ export class ImoveisController {
   @Permissions(IMOVEIS_ROUTES.search.permission)
   async search(@Query() { limit, page, search, tipo, exclude }: BaseGetPaginatedQueryDto) {
     const data = await this.imoveisService.findMany(search, page, limit, tipo, exclude);
+
+    return data;
+  }
+
+  @Get(IMOVEIS_ROUTES.searchLocacao.route)
+  @Permissions(IMOVEIS_ROUTES.searchLocacao.permission)
+  async getImovelLocacao(@Query() { limit, page, search, tipo, exclude }: BaseGetPaginatedQueryDto) {
+    const data = await this.imoveisService.findManyLocacao(search, page, limit, tipo, exclude);
 
     return data;
   }

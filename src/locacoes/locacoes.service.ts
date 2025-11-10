@@ -8,7 +8,7 @@ import {
   ConflictException,
   Injectable,
 } from '@nestjs/common';
-import { GarantiaLocacaoTypes, Locacao, LocacaoStatus, Prisma } from '@prisma/client';
+import { GarantiaLocacaoTypes, ImovelStatus, Locacao, LocacaoStatus, Prisma } from '@prisma/client';
 import { MemoryStoredFile } from 'nestjs-form-data';
 import { randomUUID } from 'node:crypto';
 import {
@@ -26,6 +26,8 @@ export class LocacaoService {
     const {
       dataInicio,
       dataFim,
+      documentos,
+      documentosToDeleteIds,
     } = createLocacaoDto;
 
     let str_fiador: string = createLocacaoDto.fiador.toString();
@@ -49,10 +51,10 @@ export class LocacaoService {
       data: {
         dataInicio: createLocacaoDto.dataInicio,
         dataFim: createLocacaoDto.dataFim,
-        valor_aluguel: createLocacaoDto.valor_aluguel,
+        valorAluguel: createLocacaoDto.valorAluguel,
         status: createLocacaoDto.status,
         imovelId: createLocacaoDto.imovelId,
-        dia_vencimento: createLocacaoDto.dia_vencimento,
+        diaVencimento: createLocacaoDto.diaVencimento,
         garantiaLocacaoTipo: createLocacaoDto.garantiaLocacaoTipo,
 
         garantiaTituloCapitalizacao:
@@ -67,7 +69,8 @@ export class LocacaoService {
             {
               create: {
                 valorDeposito: createLocacaoDto.valorDeposito,
-                quantidadeMeses: createLocacaoDto.quantidadeMeses
+                quantidadeMeses: createLocacaoDto.quantidadeMeses,
+                localDeposito: createLocacaoDto.localDeposito,
               }
             } : undefined,
         garantiaSeguroFianca:
@@ -77,6 +80,13 @@ export class LocacaoService {
                 numeroSeguro: createLocacaoDto.numeroSeguro
               }
             } : undefined,
+        seguroIncendio: {
+          create: {
+            numeroApolice: createLocacaoDto.numeroApolice,
+            vigenciaInicio: createLocacaoDto.vigenciaInicio,
+            vigenciaFim: createLocacaoDto.vigenciaFim
+          }
+        },
         fiadores:
           createLocacaoDto.garantiaLocacaoTipo === GarantiaLocacaoTypes.FIADOR ?
             {
@@ -99,9 +109,36 @@ export class LocacaoService {
       include: {
         locatarios: true,
         fiadores: true,
-        pagamentos: true,
+        boletos: true,
       },
     });
+
+    //Grava documento anexados
+    if (documentos) {
+      await this.createLocacaoDocuments(result.id, documentos);
+    }
+
+    if (documentosToDeleteIds) {
+      await this.prismaService.genericAnexo.deleteMany({
+        where: {
+          id: {
+            in: documentosToDeleteIds,
+          },
+        },
+      });
+    }
+
+    //Atualiza situação do imóvel
+    const result2 = await this.prismaService.imovel.update(
+      {
+        where: {
+          id: createLocacaoDto.imovelId
+        },
+        data: {
+          status: ImovelStatus.ALUGADO
+        }
+      }
+    )
 
     return result;
   }
@@ -139,7 +176,14 @@ export class LocacaoService {
         garantiaDepositoCalcao: true,
         garantiaSeguroFianca: true,
         garantiaTituloCapitalizacao: true,
-        pagamentos: true,
+        seguroIncendio: true,
+        boletos: true,
+        reajustes: true,
+        lancamentos: {
+          include: {
+            lancamentotipo: true,
+          }
+        },
       }
     });
   }
@@ -308,6 +352,7 @@ export class LocacaoService {
               endereco: true,
             }
           },
+          seguroIncendio: true,
         },
         skip,
         take: pageSize,
@@ -324,167 +369,6 @@ export class LocacaoService {
       totalPages,
     };
   }
-
-  async updateLocatario(id: number, updateLocatarioDto: any) {//} UpdateLocatarioDto) {
-    //atualizar status da locação, atualizar preço do aluguel, atualizar status do imóvel, atualizar as datas de início e fim da locação, adicionar obersevações vinculadas a locação, imovel e ao locatário (opcional ter locatario)
-
-    /*const result = await this.prismaService.locatario.update({
-      where: {
-        id: id,
-      },
-      data: {
-        estadoCivil: updateLocatarioDto.estadoCivil,
-        nome: updateLocatarioDto.nome,
-        documento: updateLocatarioDto.documento,
-        email: updateLocatarioDto.email,
-        telefone: updateLocatarioDto.telefone,
-        profissao: updateLocatarioDto.profissao,
-        endereco:
-          logradouro ||
-          bairro ||
-          cidade ||
-          estado ||
-          cep ||
-          numero ||
-          complemento
-            ? {
-                update: {
-                  logradouro: logradouro,
-                  numero: numero,
-                  bairro: bairro,
-                  cidade: cidade,
-                  estado: estado,
-                  cep: cep,
-                  complemento: complemento,
-                },
-              }
-            : undefined,
-      },
-      include: {
-        endereco: true,
-        locacoes: true,
-      },
-    });
-
-    if (documentos) {
-      await this.createLocatarioDocuments(result.id, documentos);
-    }
-
-    if (documentosToDeleteIds) {
-      await this.prismaService.genericAnexo.deleteMany({
-        where: {
-          id: {
-            in: documentosToDeleteIds,
-          },
-        },
-      });
-    }
-
-    return result;*/
-  }
-
-  /*async findMany(
-    search: string,
-    page: number,
-    pageSize: number,
-  ): Promise<BasePaginationData<Locatario>> {
-    const skip = page > 1 ? (page - 1) * pageSize : 0;
-
-    const where: Prisma.LocatarioWhereInput = {
-      OR: [
-        {
-          nome: {
-            contains: search,
-            mode: 'insensitive',
-          },
-        },
-        {
-          documento: {
-            contains: search,
-            mode: 'insensitive',
-          },
-        },
-        {
-          email: {
-            contains: search,
-            mode: 'insensitive',
-          },
-        },
-        {
-          telefone: {
-            contains: search,
-            mode: 'insensitive',
-          },
-        },
-        {
-          endereco: {
-            logradouro: {
-              contains: search,
-              mode: 'insensitive',
-            },
-          },
-        },
-        {
-          endereco: {
-            bairro: {
-              contains: search,
-              mode: 'insensitive',
-            },
-          },
-        },
-        {
-          endereco: {
-            cidade: {
-              contains: search,
-              mode: 'insensitive',
-            },
-          },
-        },
-        {
-          endereco: {
-            estado: {
-              contains: search,
-              mode: 'insensitive',
-            },
-          },
-        },
-        {
-          endereco: {
-            cep: {
-              contains: search,
-              mode: 'insensitive',
-            },
-          },
-        },
-      ],
-    };
-
-    const [data, total] = await this.prismaService.$transaction([
-      this.prismaService.locatario.findMany({
-        where,
-        include: {
-          endereco: true,
-          locacoes: {
-            include: {
-              imovel: true,
-            },
-          },
-        },
-        skip,
-        take: pageSize,
-      }),
-      this.prismaService.locatario.count({ where }),
-    ]);
-
-    const totalPages = Math.ceil(total / pageSize);
-    return {
-      data,
-      page,
-      pageSize,
-      currentPosition: skip + data?.length, //current position in the list e.g. 10 of 100
-      totalPages,
-    };
-  }*/
 
   async deleteLocatario(id: number) {
     try {
@@ -517,56 +401,20 @@ export class LocacaoService {
     });
   }
 
-  // async locarImovel({
-  //   locatarioId,
-  //   imovelId,
-  //   dataInicio,
-  //   dataFim,
-  //   diaVencimentoPagamento,
-  //   valor_aluguel,
-  // }: {
-  //   locatarioId: number;
-  //   imovelId: number;
-  //   dataInicio: Date;
-  //   dataFim: Date;
-  //   diaVencimentoPagamento: number;
-  //   valor_aluguel: number;
-  // }) {
-  //   await this.prismaService.locacao.create({
-  //     data: {
-  //       dataInicio,
-  //       dataFim,
-  //       valor_aluguel,
-  //       locatarioId,
-  //       imovelId,
-  //     },
-  //   });
-
-  //   //create payments
-  //   await this.createPayments({
-  //     dataFim,
-  //     dataInicio,
-  //     diaVencimentoPagamento,
-  //     imovelId,
-  //     locatarioId,
-  //     valor_aluguel,
-  //   });
-  // }
-
   async createPayments({
     dataFim,
     dataInicio,
     diaVencimentoPagamento,
     imovelId,
     locatarioId,
-    valor_aluguel,
+    valorAluguel,
   }: {
     locatarioId: number;
     imovelId: number;
     dataInicio: Date;
     dataFim: Date;
     diaVencimentoPagamento: number;
-    valor_aluguel: number;
+    valorAluguel: number;
   }) {
     const dateNow = new Date();
     const payments = [];
@@ -597,7 +445,7 @@ export class LocacaoService {
 
       payments.push({
         dataPagamento: new Date(nextPaymentDate), // Copia a data atual para evitar mutações
-        valorPago: valor_aluguel,
+        valorPago: valorAluguel,
         locatarioId,
         imovelId,
       });
@@ -610,46 +458,6 @@ export class LocacaoService {
     return payments;
   }
 
-  // async updateLocacao(
-  //   id: number,
-  //   dataInicio: Date,
-  //   dataFim: Date,
-  //   valor_aluguel: number,
-  //   motivo?: string,
-  // ) {
-  //   //TODO: ao mudar o preço do aluguel, atualizar o valor da locacao e guardar o valor antigo em um histórico
-  //   //pensando melhor a atualização tem que vir no imovel, e refletir na locacao (ou nao) perguntar pro socio
-  //   const locacao = await this.prismaService.locacao.findUnique({
-  //     where: {
-  //       id,
-  //     },
-  //   });
-
-  //   if (locacao.valor_aluguel !== valor_aluguel) {
-  //     //create a new history entry
-  //     await this.prismaService.valorAluguelHistorico.create({
-  //       data: {
-  //         novoValor: valor_aluguel,
-  //         locacaoId: id,
-  //         motivo,
-  //       },
-  //     });
-  //   }
-
-  //   return await this.prismaService.locacao.update({
-  //     where: {
-  //       id,
-  //     },
-  //     data: {
-  //       dataInicio,
-  //       dataFim,
-  //       valor_aluguel,
-  //       Pagamento: {
-  //         //payments are mensal
-  //       },
-  //     },
-  //   });
-  // }
 
   async deleteLocacao(id: number) {
     return await this.prismaService.locacao.update({
@@ -796,10 +604,10 @@ export class LocacaoService {
       data: {
         dataInicio: new Date(),
         dataFim: new Date(),
-        valor_aluguel: 0,
+        valorAluguel: 0,
         status: LocacaoStatus.ATIVA,
         imovelId: imovelId,
-        dia_vencimento: 1,
+        diaVencimento: 1,
       },
     });
   }
@@ -825,7 +633,7 @@ export class LocacaoService {
       const {
         dataInicio,
         dataFim,
-        valor_aluguel,
+        valorAluguel,
         // locatarioId,
         // imovelId,
         status,
@@ -840,7 +648,11 @@ export class LocacaoService {
         numeroSeguro,
         //depósito Calçao
         valorDeposito,
-        quantidadeMeses
+        quantidadeMeses,
+        localDeposito,
+        numeroApolice,
+        vigenciaInicio,
+        vigenciaFim,
       } = data;
 
       const isValid = this.checkIsValid({
@@ -864,6 +676,7 @@ export class LocacaoService {
           fiadores: true,
           garantiaSeguroFianca: true,
           garantiaTituloCapitalizacao: true,
+          seguroIncendio: true,
         },
       });
 
@@ -893,7 +706,7 @@ export class LocacaoService {
         data: {
           dataInicio,
           dataFim,
-          valor_aluguel,
+          valorAluguel,
           status,
           garantiaLocacaoTipo,
           garantiaTituloCapitalizacao:
@@ -929,6 +742,44 @@ export class LocacaoService {
                   },
                 }
               : undefined,
+          garantiaDepositoCalcao:
+            garantiaLocacaoTipo === 'DEPOSITO_CALCAO'
+              ? existingLocacao.garantiaDepositoCalcao
+                ? {
+                  // Update the existing title capitalization guarantee
+                  update: {
+                    quantidadeMeses: quantidadeMeses,
+                    valorDeposito: valorDeposito,
+                    localDeposito: localDeposito,
+                  },
+                }
+                : {
+                  // Create a new title capitalization guarantee
+                  create: {
+                    quantidadeMeses: quantidadeMeses,
+                    valorDeposito: valorDeposito,
+                    localDeposito: localDeposito,
+                  },
+                }
+              : undefined,
+          seguroIncendio:
+            existingLocacao.seguroIncendio
+              ? {
+                update: {
+                  numeroApolice: numeroApolice,
+                  vigenciaInicio: vigenciaInicio,
+                  vigenciaFim: vigenciaFim,
+                }
+              }
+              :
+              {
+                create: {
+                  numeroApolice: numeroApolice,
+                  vigenciaInicio: vigenciaInicio,
+                  vigenciaFim: vigenciaFim,
+
+                }
+              }
         },
         include: {
           locatarios: true,
@@ -942,6 +793,16 @@ export class LocacaoService {
 
       if (documentos) {
         await this.createLocacaoDocuments(locatarioId, documentos);
+      }
+
+      if (documentosToDeleteIds) {
+        await this.prismaService.genericAnexo.deleteMany({
+          where: {
+            id: {
+              in: documentosToDeleteIds,
+            },
+          },
+        });
       }
 
       // if it changes the garantia type, we need to delete the old documents
@@ -989,6 +850,7 @@ export class LocacaoService {
           fiadores: true,
           garantiaSeguroFianca: true,
           garantiaTituloCapitalizacao: true,
+          seguroIncendio: true,
         },
       });
 
@@ -1106,7 +968,7 @@ export class LocacaoService {
 
         return this.prismaService.genericAnexo.create({
           data: {
-            tipo_arquivo: fileType,
+            tipoArquivo: fileType,
             url,
             type: file.mimetype,
             name: file.originalName,
@@ -1147,7 +1009,7 @@ export class LocacaoService {
 
         return this.prismaService.genericAnexo.create({
           data: {
-            tipo_arquivo: fileType,
+            tipoArquivo: fileType,
             url,
             type: file.mimetype,
             name: file.originalName,

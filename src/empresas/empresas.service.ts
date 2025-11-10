@@ -5,7 +5,7 @@ import { CreateEmpresaDto } from './empresas.controller';
 @Injectable()
 export class EmpresasService {
   constructor(private PrismaService: PrismaService) { }
-  async createUser(createEmpresaDto: CreateEmpresaDto) {
+  async create(createEmpresaDto: CreateEmpresaDto) {
     const checkIfUserExists = await this.PrismaService.empresa.findUnique({
       where: {
         cnpj: createEmpresaDto.cnpj,
@@ -35,6 +35,7 @@ export class EmpresasService {
         emissaoBoletoAntecedencia: createEmpresaDto.emissaoBoletoAntecedencia,
         porcentagemMultaAtraso: createEmpresaDto.porcentagemMultaAtraso,
         porcentagemJurosAtraso: createEmpresaDto.porcentagemJurosAtraso,
+        lancamentoTipo: createEmpresaDto.tipoId ? { connect: { id: createEmpresaDto.tipoId } } : undefined,
 
         endereco: {
           create: {
@@ -89,6 +90,7 @@ export class EmpresasService {
         emissaoBoletoAntecedencia: data.emissaoBoletoAntecedencia,
         porcentagemMultaAtraso: data.porcentagemMultaAtraso,
         porcentagemJurosAtraso: data.porcentagemJurosAtraso,
+        lancamentoTipo: data.tipoId ? { connect: { id: data.tipoId } } : undefined,
 
         //if we have any address data, update it
         endereco:
@@ -116,74 +118,6 @@ export class EmpresasService {
     });
     //check if we have a new valores to gerenate ImovelValorHistorico
 
-    /*
-    if (
-      data.valor_iptu ||
-      data.valor_condominio ||
-      data.valor_aluguel ||
-      data.valor_venda
-    ) {
-      if (data.valor_iptu) {
-        await this.prismaService.imovelValorHistorico.create({
-          data: {
-            tipo: ValorImovelTipo.IPTU,
-            valor: data.valor_iptu,
-            imovelId: id,
-          },
-        });
-      }
-
-      if (data.valor_condominio) {
-        await this.prismaService.imovelValorHistorico.create({
-          data: {
-            tipo: ValorImovelTipo.CONDOMINIO,
-            valor: data.valor_condominio,
-            imovelId: id,
-          },
-        });
-      }
-
-      if (data.valor_aluguel) {
-        await this.prismaService.imovelValorHistorico.create({
-          data: {
-            tipo: ValorImovelTipo.ALUGUEL,
-            valor: data.valor_aluguel,
-            imovelId: id,
-          },
-        });
-      }
-
-      if (data.valor_venda) {
-        await this.prismaService.imovelValorHistorico.create({
-          data: {
-            tipo: ValorImovelTipo.VENDA,
-            valor: data.valor_venda,
-            imovelId: id,
-          },
-        });
-      }
-
-      if (data.valor_agua) {
-        await this.prismaService.imovelValorHistorico.create({
-          data: {
-            tipo: ValorImovelTipo.AGUA,
-            valor: data.valor_agua,
-            imovelId: id,
-          },
-        });
-      }
-
-      if (data.valor_taxa_lixo) {
-        await this.prismaService.imovelValorHistorico.create({
-          data: {
-            tipo: ValorImovelTipo.TAXA_LIXO,
-            valor: data.valor_taxa_lixo,
-            imovelId: id,
-          },
-        });
-      }
-    }*/
-
     return result;
   }
 
@@ -192,6 +126,14 @@ export class EmpresasService {
       where: {
         id: id,
       },
+      include: {
+        endereco: true
+      }
+    });
+  }
+
+  async getMany() {
+    return await this.PrismaService.empresa.findMany({
       include: {
         endereco: true
       }

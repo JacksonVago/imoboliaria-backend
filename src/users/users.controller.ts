@@ -12,7 +12,9 @@ export const USER_ROUTES = {
   INFO: '/info',
   REGISTER_ADMIN: '/register-admin',
   GET_COLLABORATORS: '/collaborators',
+  GET_USER_LOGIN: '/:login',
   UPDATE_USER: '/:id',
+  UPDATE_PWD: '/updatepwd/:id',
   DELETE_USER: '/:id',
 };
 
@@ -27,6 +29,22 @@ export class BaseParamsByStringIdDto {
   id: string;
 }
 
+export class BaseParamsByStringLoginDto {
+  @IsString()
+  login: string;
+}
+
+export class ParamsByStringPwdDto {
+  @IsString()
+  login: string;
+
+  @IsString()
+  password: string;
+
+  @IsString()
+  newpassword: string;
+}
+
 @Controller('users')
 export class UsersController {
   constructor(private readonly UsersService: UsersService) { }
@@ -34,7 +52,6 @@ export class UsersController {
   @Post(USER_ROUTES.CREATE)
   @Roles(Role.ADMIN)
   create(@Body() createUserDto: CreateUserDto) {
-    console.log('CreateUserDto', createUserDto);
     return this.UsersService.createUser(createUserDto);
   }
 
@@ -47,12 +64,13 @@ export class UsersController {
     return this.UsersService.updateUser(id, data);
   }
 
-  @Get(USER_ROUTES.INFO)
-  @Roles(Role.COLLABORATOR)
-  getData(@CurrentUser() user: UserPayload) {
-    return this.UsersService.getUsers({
-      userId: user.id,
-    });
+  @Put(USER_ROUTES.UPDATE_PWD)
+  @Roles(Role.PUBLIC)
+  updatePwd(
+    @Param() { id }: BaseParamsByStringIdDto,
+    @Body() data: ParamsByStringPwdDto,
+  ) {
+    return this.UsersService.updatePwd(id, data);
   }
 
   @Get(USER_ROUTES.INFO)
@@ -79,7 +97,10 @@ export class UsersController {
   @Roles(Role.ADMIN)
   async getCollaborators() {
     //Get all collaborators
-    return await this.UsersService.getCollaborators();
+    console.log('antes');
+    const collaborators = await this.UsersService.getCollaborators();
+    console.log('collaborators', collaborators);
+    return collaborators
   }
 
   @Delete(USER_ROUTES.DELETE_USER)
@@ -87,4 +108,11 @@ export class UsersController {
   async deleteUser(@Param() { id }: BaseParamsByStringIdDto) {
     return await this.UsersService.deleteUser(id);
   }
+
+  @Get(USER_ROUTES.GET_USER_LOGIN)
+  @Roles(Role.PUBLIC)
+  async getUserByLogin(@Param() { login }: BaseParamsByStringLoginDto) {
+    return await this.UsersService.getUserbyLogin(login);
+  }
+
 }

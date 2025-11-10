@@ -50,7 +50,7 @@ export class CreateLocacaoDto {
 
   @Transform(({ value }) => Number(value))
   @IsInt()
-  valor_aluguel: number;
+  valorAluguel: number;
 
   @IsOptional()
   @IsEnum(LocacaoStatus)
@@ -62,7 +62,7 @@ export class CreateLocacaoDto {
 
   @Transform(({ value }) => Number(value))
   @IsInt()
-  dia_vencimento: number;
+  diaVencimento: number;
 
   @IsFiles()
   @IsOptional()
