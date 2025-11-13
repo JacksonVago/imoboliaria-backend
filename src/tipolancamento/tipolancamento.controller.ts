@@ -98,7 +98,7 @@ export class TipoLancamentoController {
   }
 
   @Get(TIPO_ROUTES.findMany.route)
-  @Permissions(TIPO_ROUTES.findMany.permission)
+  //@Permissions(TIPO_ROUTES.findMany.permission)
   async getTipo() {
     return await this.TipoLancamentoService.getTipos();
   }

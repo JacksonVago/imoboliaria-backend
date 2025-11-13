@@ -370,6 +370,36 @@ export class LocacaoService {
     };
   }
 
+  async findLancamentos(
+    id: number,
+    dataInicial: Date,
+    dataFinal: Date,
+  ) {
+
+    let dataFim: Date = dataFinal;
+    dataFim.setDate(dataFinal.getDate() + 1);
+
+    return this.prismaService.locacao.findUnique({
+      where: {
+        id: id,
+      },
+      include: {
+        lancamentos: {
+          where: {
+            dataLancamento: {
+              gte: dataInicial,
+              lte: dataFim,
+            },
+          },
+          include: {
+            lancamentotipo: true,
+          },
+        },
+      },
+    });
+
+  }
+
   async deleteLocatario(id: number) {
     try {
       return this.prismaService.locatario.delete({

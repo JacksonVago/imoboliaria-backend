@@ -157,6 +157,16 @@ export class UpdateLocacaoDto extends PartialType(CreateLocacaoDto) {
   documentosToDeleteIds?: number[];
 }
 
+export class GetLancamentosDto {
+  @Transform(({ value }) => new Date(value))
+  @IsDate()
+  dataInicial: Date;
+
+  @Transform(({ value }) => new Date(value))
+  @IsDate()
+  dataFinal: Date;
+}
+
 export class CreatePreLinkLocacaoDto {
   @Transform(({ value }) => Number(value))
   @IsInt()
@@ -238,10 +248,10 @@ export const LOCACAO_ROUTES: BaseRoutes = {
     route: 'preLinklocacao/create',
     permission: Permission.CREATE_LOCACAO,
   },
-  updateLocacao: {
+  Lancamentos: {
     name: 'locacoes',
-    route: 'locacoes/:id',
-    permission: Permission.UPDATE_LOCACAO,
+    route: 'lancamentos/:id',
+    permission: Permission.VIEW_LANCAMENTOS,
   },
   unlinkLocacao: {
     name: 'unlinkLocacao',
@@ -274,6 +284,15 @@ export class LocacaoController {
   @Permissions(LOCACAO_ROUTES.findById.permission)
   async findById(@Param() { id }: BaseParamsByIdDto) {
     return await this.locacaoService.findById(id);
+  }
+
+  @Get(LOCACAO_ROUTES.Lancamentos.route)
+  @Permissions(LOCACAO_ROUTES.Lancamentos.permission)
+  async lancamentos(@Param() { id }: BaseParamsByIdDto,
+    @Query() data: GetLancamentosDto) {
+    const { dataInicial, dataFinal } = data;
+    const response = await this.locacaoService.findLancamentos(id, dataInicial, dataFinal);
+    return response;
   }
 
   @Put(LOCACAO_ROUTES.update.route)
@@ -310,13 +329,4 @@ export class LocacaoController {
     );
   }
 
-  /*@Put(LOCACAO_ROUTES.updateLocacao.route)
-  @Permissions(LOCACAO_ROUTES.updateLocacao.permission)
-  @FormDataRequest()
-  async preLinkLocatarioToLocacao(
-    @Param() { id }: BaseParamsByIdDto,
-    @Body() data: UpdateLocacaoDto,
-  ) {
-    return await this.locacaoService.updateLocacao(id, data);
-  }*/
 }
