@@ -20,6 +20,7 @@ import {
   IsEmail,
   IsEnum,
   IsInt,
+  IsNumber,
   IsOptional,
   IsString
 } from 'class-validator';
@@ -47,7 +48,7 @@ export const PESSOA_ROUTES: BaseRoutes = {
   },
   get: {
     name: 'Get Pessoa',
-    route: '/:id',
+    route: '/findbyid/:id',
     permission: Permission.VIEW_PESSOAS,
   },
   put: {
@@ -62,7 +63,7 @@ export const PESSOA_ROUTES: BaseRoutes = {
   },
   search: {
     name: 'Search Pessoas',
-    route: '/',
+    route: '/:empresaId',
     permission: Permission.VIEW_PESSOAS,
   },
   vincularProprietario: {
@@ -163,6 +164,11 @@ export class CreatePessoaDto extends EnderecoDto {
     },
   )
   documentos?: MemoryStoredFile[];
+
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  empresaId: number;
+
 }
 
 export class UpdatePessoaDto extends PartialType(CreatePessoaDto) {
@@ -170,6 +176,12 @@ export class UpdatePessoaDto extends PartialType(CreatePessoaDto) {
     return value.map(Number);
   })
   documentosToDeleteIds?: number[];
+}
+
+export class BaseParamsIdEmpresaDto {
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  empresaId: number;
 }
 
 @Controller('pessoas')
@@ -185,9 +197,9 @@ export class PessoasController {
 
   @Get(PESSOA_ROUTES.search.route)
   @Permissions(PESSOA_ROUTES.search.permission)
-  async search(@Query() data: GetPessoasQueryDto) {
+  async search(@Param() { empresaId }: BaseParamsIdEmpresaDto, @Query() data: GetPessoasQueryDto) {
     const { search, page, limit, exclude } = data;
-    const response = await this.pessoasService.findMany(search, page, limit, exclude);
+    const response = await this.pessoasService.findMany(empresaId, search, page, limit, exclude);
     return response;
   }
 

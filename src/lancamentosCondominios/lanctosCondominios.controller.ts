@@ -11,7 +11,7 @@ import {
   Put,
   Query
 } from '@nestjs/common';
-import { lancamentoStatus, LancamentoTipo, LocacaoStatus, Locatario, Permission } from '@prisma/client';
+import { lancamentoStatus, LancamentoTipo, LocacaoStatus, Permission } from '@prisma/client';
 import { Transform } from 'class-transformer';
 import {
   IsDate,
@@ -24,9 +24,9 @@ import {
 import {
   FormDataRequest
 } from 'nestjs-form-data';
-import { LancamentosService } from './lancamentos.service';
+import { LanctosCondominiosService } from './lanctosCondominios.service';
 
-export class LancamentoDto {
+export class LanctoCondominioDto {
   id: number;
   lancamentotipo: LancamentoTipo;
   parcela: number;
@@ -36,7 +36,7 @@ export class LancamentoDto {
   vencimentoLancamento: Date;
   observacao: string;
   status: lancamentoStatus;
-  locacaoId: number;
+  blocoId: number;
 }
 
 export class gerarBoletoDto {
@@ -47,11 +47,10 @@ export class gerarBoletoDto {
   status: LocacaoStatus;
   imovelId: number;
   diaVencimento: number;
-  lancamentos: LancamentoDto[];
-  locatarios: Locatario[]
+  lancamentos: LanctoCondominioDto[];
 }
 
-export class CreateLancamentoDto {
+export class CreateLanctoCondominioDto {
 
   @Transform(({ value }) => Number(value))
   @IsInt()
@@ -79,12 +78,16 @@ export class CreateLancamentoDto {
   observacao: string;
 
   @IsOptional()
+  @IsString()
+  rateia: string;
+
+  @IsOptional()
   @IsEnum(lancamentoStatus)
   status: lancamentoStatus;
 
   @Transform(({ value }) => Number(value))
   @IsInt()
-  locacaoId: number;
+  blocoId: number;
 
 }
 
@@ -118,7 +121,7 @@ export class GetLancamentosQueryDto {
 
 export const LANCAMENTO_ROUTES: BaseRoutes = {
   create: {
-    name: 'create Lancamento',
+    name: 'create Lancamento condominio',
     route: '/',
     permission: Permission.CREATE_LOCACAO_LANCAMENTO,
   },
@@ -128,72 +131,56 @@ export const LANCAMENTO_ROUTES: BaseRoutes = {
     permission: Permission.VIEW_LOCACAO_LANCAMENTOS,
   },
   update: {
-    name: 'update Lancamento',
+    name: 'update Lancamento condominio',
     route: ':id',
     permission: Permission.UPDATE_LOCACAO_LANCAMENTO,
   },
   delete: {
-    name: 'delete Lancamento',
+    name: 'delete Lancamento condominio',
     route: ':id',
     permission: Permission.DELETE_LOCACAO_LANCAMENTO,
   },
   search: {
-    name: 'Search Lancamentos',
+    name: 'Search Lancamentos condominio',
     route: '/:empresaId',
     permission: Permission.VIEW_LOCACAO_LANCAMENTOS,
   },
   statusLancamento: {
-    name: 'Status Lancamento',
+    name: 'Status Lancamento condominio',
     route: 'statuslancamento/:id',
     permission: Permission.UPDATE_LOCACAO_LANCAMENTO,
   },
   gerarBoleto: {
-    name: 'Gerar Boleto',
+    name: 'Gerar Boleto condominio',
     route: 'gerar-boleto/',
     permission: Permission.CREATE_PAGAMENTO,
   },
 };
 
-@Controller('lancamentos')
-export class LancamentoController {
-  constructor(private readonly lancamentoService: LancamentosService) { }
+@Controller('lancamentosCondominios')
+export class LanctoCondominioController {
+  constructor(private readonly lanctoCondominioService: LanctosCondominiosService) { }
 
   @Post(LANCAMENTO_ROUTES.create.route)
   @Permissions(LANCAMENTO_ROUTES.create.permission)
   @FormDataRequest()
-  createPagamento(@Body() createLancamentoDto: CreateLancamentoDto) {
+  createPagamento(@Body() createLanctoCondominioDto: CreateLanctoCondominioDto) {
 
-    return this.lancamentoService.create(createLancamentoDto);
+    return this.lanctoCondominioService.create(createLanctoCondominioDto);
   }
-
-  @Post(LANCAMENTO_ROUTES.gerarBoleto.route)
-  @Permissions(LANCAMENTO_ROUTES.gerarBoleto.permission)
-  create(@Body() gerarBoletoDto: gerarBoletoDto) {
-
-    return this.lancamentoService.createPagamento(gerarBoletoDto);
-  }
-
-  /*  @Get(LANCAMENTO_ROUTES.search.route)
-  @Permissions(LANCAMENTO_ROUTES.search.permission)
-  async search(@Query() data: GetLancamentosQueryDto) {
-    const { search, page, limit, status, exclude, dataInicial, dataFinal } = data;
-    const response = await this.lancamentoService.findMany(search, page, limit, status, exclude);
-    return response;
-  }
- */
 
   @Get(LANCAMENTO_ROUTES.search.route)
   @Permissions(LANCAMENTO_ROUTES.search.permission)
   async search(@Param() { empresaId }: BaseParamsIdEmpresaDto, @Query() data: GetLancamentosQueryDto) {
     const { search, page, limit, status, exclude, dataInicial, dataFinal } = data;
-    const response = await this.lancamentoService.findManyLocacao(Number(empresaId), search, page, limit, status, exclude, dataInicial, dataFinal);
+    const response = await this.lanctoCondominioService.findManyCondominio(Number(empresaId), search, page, limit, status, exclude, dataInicial, dataFinal);
     return response;
   }
 
   @Get(LANCAMENTO_ROUTES.findById.route)
   @Permissions(LANCAMENTO_ROUTES.findById.permission)
   async findById(@Param() { id }: BaseParamsByIdDto) {
-    return await this.lancamentoService.findById(id);
+    return await this.lanctoCondominioService.findById(id);
   }
 
   @Put(LANCAMENTO_ROUTES.update.route)
@@ -201,23 +188,23 @@ export class LancamentoController {
   @FormDataRequest()
   async update(
     @Param() { id }: BaseParamsByIdDto,
-    @Body() data: CreateLancamentoDto,
+    @Body() data: CreateLanctoCondominioDto,
   ) {
-    return await this.lancamentoService.update(id, data);
+    return await this.lanctoCondominioService.update(id, data);
   }
 
   @Put(LANCAMENTO_ROUTES.statusLancamento.route)
   @Permissions(LANCAMENTO_ROUTES.statusLancamento.permission)
   async statusLancamento(
     @Param() { id }: BaseParamsByIdDto,
-    @Body() data: CreateLancamentoDto) {
-    return this.lancamentoService.updateStatus(id, data);
+    @Body() data: CreateLanctoCondominioDto) {
+    return this.lanctoCondominioService.updateStatus(id, data);
   }
 
   @Delete(LANCAMENTO_ROUTES.delete.route)
   @Permissions(LANCAMENTO_ROUTES.delete.permission)
   async delete(@Param() { id }: BaseParamsByIdDto) {
-    return this.lancamentoService.delete(id);
+    return this.lanctoCondominioService.delete(id);
   }
 
 }

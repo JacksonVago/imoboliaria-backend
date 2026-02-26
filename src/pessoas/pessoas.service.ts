@@ -1,6 +1,6 @@
 import { BasePaginationData } from '@/common/interfaces/base-pagination';
 import { FileData } from '@/common/interfaces/file-data';
-import { FilesService } from '@/files/files.service';
+import { FilesAzureService } from '@/files/azurefiles.service';
 import { PrismaService } from '@/prisma/prisma.service';
 import { getFileType } from '@/proprietarios/proprietarios.service';
 import {
@@ -18,7 +18,7 @@ import {
 export class PessoasService {
   constructor(
     private readonly prismaService: PrismaService,
-    private filesService: FilesService,
+    private filesAzureService: FilesAzureService,
   ) { }
 
   async create(createPessoaDto: CreatePessoaDto) {
@@ -62,6 +62,7 @@ export class PessoasService {
               },
             }
             : undefined,
+        empresa: createPessoaDto.empresaId ? { connect: { id: createPessoaDto.empresaId } } : undefined,
       },
       // também retornar o endereço e a locação criados
       include: {
@@ -71,13 +72,14 @@ export class PessoasService {
     });
 
     if (documentos) {
-      await this.createPessoaDocuments(result.id, documentos);
+      await this.createPessoaDocuments(result.empresaId, result.id, documentos);
     }
 
     return result;
   }
 
   async createPessoaDocuments(
+    EmpresaId: number,
     PessoaId: number,
     files: MemoryStoredFile[],
   ) {
@@ -94,7 +96,11 @@ export class PessoasService {
           encoding: file.encoding,
         };
 
-        const url = await this.filesService.uploadFile(adaptedFile);
+        //const url = await this.filesService.uploadFile(adaptedFile);
+
+        const folder = 'admimoveis/' + EmpresaId.toString() + '/pessoas/' + PessoaId.toString() + '/' + file.originalName.replaceAll(' ', '_');
+
+        const url = await this.filesAzureService.uploadFile(folder, file);
 
         const fileType = getFileType(file);
 
@@ -122,7 +128,7 @@ export class PessoasService {
   }
 
   async findById(id: number) {
-    return await this.prismaService.pessoa.findUnique({
+    const result = await this.prismaService.pessoa.findUnique({
       where: {
         id: id,
       },
@@ -180,6 +186,8 @@ export class PessoasService {
         }
       },
     });
+
+    return result;
   }
 
   async update(id: number, updatePessoaDto: UpdatePessoaDto) {
@@ -236,23 +244,36 @@ export class PessoasService {
     });
 
     if (documentos) {
-      await this.createPessoaDocuments(result.id, documentos);
+      await this.createPessoaDocuments(result.empresaId, result.id, documentos);
     }
 
     if (documentosToDeleteIds) {
-      await this.prismaService.genericAnexo.deleteMany({
-        where: {
-          id: {
-            in: documentosToDeleteIds,
+      //Exclui arquivo da nuvem
+      documentosToDeleteIds.forEach(async (docId) => {
+        const doc = await this.prismaService.genericAnexo.findUnique({
+          where: {
+            id: docId,
           },
-        },
-      });
+        });
+        console.log('Deleting file from Azure:', doc.url);
+        await this.filesAzureService.deleteFile(doc.url);
+
+        await this.prismaService.genericAnexo.delete({
+          where: {
+            id: docId,
+          },
+        });
+
+      }
+      );
+
     }
 
     return result;
   }
 
   async findMany(
+    empresaId: number,
     search: string,
     page: number,
     pageSize: number,
@@ -339,6 +360,7 @@ export class PessoasService {
       //Quando quiser excluir id´s
       AND: [
         (exclude === null ? {} : { id: { notIn: arr_id } }),
+        empresaId ? { empresaId: empresaId } : {},
       ]
 
     };

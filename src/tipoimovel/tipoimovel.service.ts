@@ -7,7 +7,7 @@ import { CreateTipoDto } from './tipoimovel.controller';
 export class TipoImovelService {
   constructor(private PrismaService: PrismaService) { }
   async createTipo(createTipoDto: CreateTipoDto) {
-    const { name } = createTipoDto;
+    const { name, empresaId } = createTipoDto;
     const checkIfUserExists = await this.PrismaService.imovelTipo.findUnique({
       where: {
         name: name,
@@ -20,8 +20,10 @@ export class TipoImovelService {
 
     return await this.PrismaService.imovelTipo.create({
       data: {
-        name: name
+        name: name,
+        empresa: empresaId ? { connect: { id: empresaId } } : undefined,
       },
+      include: { empresa: true },
     });
   }
 
@@ -33,11 +35,16 @@ export class TipoImovelService {
       data: {
         name: name,
       },
+      include: { empresa: true },
     });
   }
 
-  async getTipos() {
+  async getTipos(empresa_id: number) {
     return await this.PrismaService.imovelTipo.findMany({
+      where: {
+        empresaId: empresa_id,
+      },
+      include: { empresa: true },
     });
   }
 
@@ -57,6 +64,7 @@ export class TipoImovelService {
       data: {
         status: PessoaStatus.ATIVA,
       },
+      include: { empresa: true },
     });
   }
   async desativaTipo(id: number) {
@@ -67,6 +75,7 @@ export class TipoImovelService {
       data: {
         status: PessoaStatus.CANCELADA,
       },
+      include: { empresa: true },
     });
   }
 }

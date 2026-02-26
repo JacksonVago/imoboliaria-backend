@@ -1,6 +1,7 @@
 import { EnvModule } from '@/env/env.module';
 import { Module } from '@nestjs/common';
 import { MemoryStoredFile, NestjsFormDataModule } from 'nestjs-form-data';
+import { FilesAzureService } from './azurefiles.service';
 import { FilesController } from './files.controller';
 import { FilesService } from './files.service';
 
@@ -10,7 +11,7 @@ import { FilesService } from './files.service';
     NestjsFormDataModule.config({ storage: MemoryStoredFile }),
   ],
   controllers: [FilesController],
-  providers: [FilesService],
-  exports: [FilesService],
+  providers: [FilesService, FilesAzureService],
+  exports: [FilesService, FilesAzureService],
 })
-export class FilesModule {}
+export class FilesModule { }

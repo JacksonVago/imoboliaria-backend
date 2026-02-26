@@ -4,7 +4,7 @@ import { Role } from '@/auth/enums/roles.enum';
 import { UserPayload } from '@/auth/estrategies/jwt.strategy';
 import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
 import { IsString } from 'class-validator';
-import { CreateAdminUserDto, CreateUserDto } from './dtos/users.dto';
+import { CreateUserDto } from './dtos/users.dto';
 import { UsersService } from './users.service';
 
 export const USER_ROUTES = {
@@ -81,7 +81,7 @@ export class UsersController {
     });
   }
 
-  @Post(USER_ROUTES.REGISTER_ADMIN)
+  /*@Post(USER_ROUTES.REGISTER_ADMIN)
   @Roles(Role.PUBLIC)
   async registerAdmin(@Body() createUserDto: CreateAdminUserDto) {
     //Only the first user can create an admin user
@@ -91,7 +91,7 @@ export class UsersController {
       createUserDto.email,
       createUserDto.password,
     );
-  }
+  }*/
 
   @Get(USER_ROUTES.GET_COLLABORATORS)
   @Roles(Role.ADMIN)

@@ -4,6 +4,7 @@ import {
   BaseGetPaginatedQueryDto,
   BaseParamsByIdDto,
   BaseParamsByStatus,
+  BaseParamsIdEmpresaDto,
 } from '@/common/interfaces/base-search';
 import {
   Body,
@@ -29,7 +30,7 @@ export const IMOVEIS_ROUTES: BaseRoutes = {
   },
   search: {
     name: 'Search Imoveis',
-    route: '/',
+    route: '/:empresaId',
     permission: Permission.VIEW_IMOVELS,
   },
   searchStatusType: {
@@ -44,7 +45,7 @@ export const IMOVEIS_ROUTES: BaseRoutes = {
   },
   get: {
     name: 'Get Imovel',
-    route: '/:id',
+    route: '/findbyid/:id',
     permission: Permission.VIEW_IMOVELS,
   },
   update: {
@@ -72,8 +73,8 @@ export class ImoveisController {
 
   @Get(IMOVEIS_ROUTES.search.route)
   @Permissions(IMOVEIS_ROUTES.search.permission)
-  async search(@Query() { limit, page, search, tipo, exclude }: BaseGetPaginatedQueryDto) {
-    const data = await this.imoveisService.findMany(search, page, limit, tipo, exclude);
+  async search(@Param() { empresaId }: BaseParamsIdEmpresaDto, @Query() { limit, page, search, tipo, exclude }: BaseGetPaginatedQueryDto) {
+    const data = await this.imoveisService.findMany(Number(empresaId), search, page, limit, tipo, exclude);
 
     return data;
   }

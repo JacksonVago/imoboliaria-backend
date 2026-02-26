@@ -1,6 +1,6 @@
 import { Permissions } from '@/auth/decorators/permissions.decorator';
 import { BaseRoutes } from '@/common/interfaces/base-routes';
-import { BaseParamsByIdDto, DEFAULT_PAGE_SIZE } from '@/common/interfaces/base-search';
+import { BaseParamsByIdDto, BaseParamsIdEmpresaDto, DEFAULT_PAGE_SIZE } from '@/common/interfaces/base-search';
 import {
   Body,
   Controller,
@@ -147,6 +147,9 @@ export class CreateLocacaoDto {
   @IsDate()
   vigenciaFim: Date;
 
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  empresaId: number;
 }
 
 export class UpdateLocacaoDto extends PartialType(CreateLocacaoDto) {
@@ -220,7 +223,7 @@ export const LOCACAO_ROUTES: BaseRoutes = {
   },
   findById: {
     name: 'findById',
-    route: ':id',
+    route: 'findbyid/:id',
     permission: Permission.VIEW_LOCACOES,
   },
   update: {
@@ -230,7 +233,7 @@ export const LOCACAO_ROUTES: BaseRoutes = {
   },
   findMany: {
     name: 'findMany',
-    route: '/',
+    route: '/:empresaId',
     permission: Permission.VIEW_LOCACOES,
   },
   delete: {
@@ -240,7 +243,7 @@ export const LOCACAO_ROUTES: BaseRoutes = {
   },
   search: {
     name: 'Search Locacoes',
-    route: '/',
+    route: '/:empresaId',
     permission: Permission.VIEW_LOCACOES,
   },
   createPreLinkLocacao: {
@@ -251,7 +254,7 @@ export const LOCACAO_ROUTES: BaseRoutes = {
   Lancamentos: {
     name: 'locacoes',
     route: 'lancamentos/:id',
-    permission: Permission.VIEW_LANCAMENTOS,
+    permission: Permission.VIEW_LOCACAO_LANCAMENTOS,
   },
   unlinkLocacao: {
     name: 'unlinkLocacao',
@@ -274,9 +277,9 @@ export class LocacaoController {
 
   @Get(LOCACAO_ROUTES.search.route)
   @Permissions(LOCACAO_ROUTES.search.permission)
-  async search(@Query() data: GetLocacoesQueryDto) {
+  async search(@Param() { empresaId }: BaseParamsIdEmpresaDto, @Query() data: GetLocacoesQueryDto) {
     const { search, page, limit, status, exclude } = data;
-    const response = await this.locacaoService.findMany(search, page, limit, status, exclude);
+    const response = await this.locacaoService.findMany(Number(empresaId), search, page, limit, status, exclude);
     return response;
   }
 
@@ -316,17 +319,6 @@ export class LocacaoController {
   @Permissions(LOCACAO_ROUTES.unlinkLocacao.permission)
   async unlinkLocacao(@Param() { id }: BaseParamsByIdDto) {
     return this.locacaoService.deleteLocacao(id);
-  }
-
-  //start ren
-  @Post(LOCACAO_ROUTES.createPreLinkLocacao.route)
-  @Permissions(LOCACAO_ROUTES.createPreLinkLocacao.permission)
-  @FormDataRequest()
-  async createLocacao(@Body() data: CreatePreLinkLocacaoDto) {
-    return await this.locacaoService.preLinkLocatarioToLocacao(
-      data.locatarioId,
-      data.imovelId,
-    );
   }
 
 }

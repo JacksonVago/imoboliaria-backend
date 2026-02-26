@@ -2,12 +2,18 @@ import { Permissions } from '@/auth/decorators/permissions.decorator';
 import { BaseRoutes } from '@/common/interfaces/base-routes';
 import { Body, Controller, Delete, Get, Param, Patch, Post, Put } from '@nestjs/common';
 import { Permission } from '@prisma/client';
-import { IsString } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsNumber, IsString } from 'class-validator';
 import { TipoImovelService } from './tipoimovel.service';
 
 export class CreateTipoDto {
   @IsString()
   name: string;
+
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  empresaId: number;
+
 }
 
 export const TIPO_ROUTES: BaseRoutes = {
@@ -28,13 +34,13 @@ export const TIPO_ROUTES: BaseRoutes = {
   },
   findMany: {
     name: 'findMany',
-    route: '/',
+    route: '/:empresaId',
     permission: Permission.VIEW_TIPOS,
   },
   delete: {
     name: 'delete Tipo',
     route: ':id',
-    permission: Permission.DELETE_TPO,
+    permission: Permission.DELETE_TIPO,
   },
   patchAtiva: {
     name: 'Ativa Tipo',
@@ -52,8 +58,12 @@ export const TIPO_ROUTES: BaseRoutes = {
 export class BaseParamsByStringIdDto {
   @IsString()
   id: string;
+}
 
-
+export class BaseParamsIdEmpresaDto {
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  empresaId: number;
 }
 
 @Controller('tipoimovel')
@@ -84,8 +94,8 @@ export class TipoImovelController {
 
   @Get(TIPO_ROUTES.findMany.route)
   @Permissions(TIPO_ROUTES.findMany.permission)
-  async getTipo() {
-    return await this.TipoImovelService.getTipos();
+  async getTipo(@Param() { empresaId }: BaseParamsIdEmpresaDto) {
+    return await this.TipoImovelService.getTipos(empresaId);
   }
 
   @Patch(TIPO_ROUTES.patchAtiva.route)

@@ -53,7 +53,7 @@ export class LocacaoService {
         dataFim: createLocacaoDto.dataFim,
         valorAluguel: createLocacaoDto.valorAluguel,
         status: createLocacaoDto.status,
-        imovelId: createLocacaoDto.imovelId,
+        imovel: createLocacaoDto.imovelId > 0 ? { connect: { id: createLocacaoDto.imovelId } } : undefined,
         diaVencimento: createLocacaoDto.diaVencimento,
         garantiaLocacaoTipo: createLocacaoDto.garantiaLocacaoTipo,
 
@@ -103,13 +103,15 @@ export class LocacaoService {
           create: {
             pessoaId: createLocacaoDto.pessoaId
           }
-        }
+        },
+        empresa: createLocacaoDto.empresaId ? { connect: { id: createLocacaoDto.empresaId } } : undefined,
       },
       // também retornar o endereço e a locação criados
       include: {
         locatarios: true,
         fiadores: true,
         boletos: true,
+        imovel: true,
       },
     });
 
@@ -188,7 +190,7 @@ export class LocacaoService {
     });
   }
 
-  async findMany(
+  async findMany(empresaId: number,
     search: string,
     page: number,
     pageSize: number,
@@ -329,6 +331,7 @@ export class LocacaoService {
       AND: [
         ((statusLocacao === null || statusLocacao === undefined) ? {} : { status: { equals: statusLocacao } }),
         (exclude === null ? {} : { id: { notIn: arr_id } }),
+        empresaId ? { empresaId: empresaId } : {},
       ]
     };
 
@@ -395,6 +398,16 @@ export class LocacaoService {
             lancamentotipo: true,
           },
         },
+        locatarios: {
+          include: {
+            pessoa: true
+          }
+        },
+        imovel: {
+          include: {
+            endereco: true,
+          }
+        }
       },
     });
 
@@ -588,58 +601,6 @@ export class LocacaoService {
       currentPosition: skip + data?.length, //current position in the list e.g. 10 of 100
       totalPages,
     };
-  }
-
-  //este é um pré registro de locação, o locatario está amarrado ao imovel, mas a locação ainda não foi criada
-  async preLinkLocatarioToLocacao(locacaoId: number, imovelId: number) {
-    const imovel = await this.prismaService.imovel.findUnique({
-      where: {
-        id: imovelId,
-      },
-      include: {
-        locacoes: {
-          where: {
-            status: { notIn: [LocacaoStatus.ENCERRADA] },
-          },
-        },
-      },
-    });
-
-    if (!imovel) {
-      throw new BadRequestException('Imovel not found');
-    }
-
-    //verificar se o imovel já tem um locatario vinculado
-    if (imovel?.locacoes?.length > 0) {
-      throw new BadRequestException(
-        'This property already has a locatario linked',
-      );
-    }
-    await this.prismaService.imovel.update({
-      where: {
-        id: imovelId,
-      },
-      data: {
-        locacoes: {
-          connect: {
-            id: locacaoId,
-          }
-        }
-      },
-    });
-
-    //Criamos uma locacao sem dados, apenas para vincular o locatario ao imovel
-    return await this.prismaService.locacao.create({
-
-      data: {
-        dataInicio: new Date(),
-        dataFim: new Date(),
-        valorAluguel: 0,
-        status: LocacaoStatus.ATIVA,
-        imovelId: imovelId,
-        diaVencimento: 1,
-      },
-    });
   }
 
   checkIsValid(data: Partial<Prisma.LocacaoCreateInput>) {

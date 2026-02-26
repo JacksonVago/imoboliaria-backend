@@ -35,7 +35,7 @@ export class EmpresasService {
         emissaoBoletoAntecedencia: createEmpresaDto.emissaoBoletoAntecedencia,
         porcentagemMultaAtraso: createEmpresaDto.porcentagemMultaAtraso,
         porcentagemJurosAtraso: createEmpresaDto.porcentagemJurosAtraso,
-        lancamentoTipo: createEmpresaDto.tipoId ? { connect: { id: createEmpresaDto.tipoId } } : undefined,
+        tipoLancamento: createEmpresaDto.tipoId,
 
         endereco: {
           create: {
@@ -90,7 +90,7 @@ export class EmpresasService {
         emissaoBoletoAntecedencia: data.emissaoBoletoAntecedencia,
         porcentagemMultaAtraso: data.porcentagemMultaAtraso,
         porcentagemJurosAtraso: data.porcentagemJurosAtraso,
-        lancamentoTipo: data.tipoId ? { connect: { id: data.tipoId } } : undefined,
+        tipoLancamento: data.tipoId,
 
         //if we have any address data, update it
         endereco:

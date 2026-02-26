@@ -51,3 +51,26 @@ export class BaseParamsByStatus {
   imovelStatus: ImovelStatus;
 }
 
+export class BaseParamsIdEmpresaDto {
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  empresaId: number;
+}
+
+export class BaseGetSearchQueryDto {
+  @IsOptional()
+  @Transform(({ value }) => parseInt(value, DEFAULT_PAGE_SIZE))
+  page?: number;
+
+  @IsOptional()
+  @Transform(({ value }) => parseInt(value, DEFAULT_PAGE_SIZE))
+  limit?: number;
+
+  @IsOptional()
+  search?: string;
+
+  @IsOptional()
+  exclude?: string;
+}
+
+

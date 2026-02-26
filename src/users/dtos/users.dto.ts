@@ -1,38 +1,41 @@
 import { Permission } from "@prisma/client";
-import { IsArray, IsEnum, IsOptional, IsString, IsStrongPassword } from "class-validator";
+import { IsArray, IsEnum, IsNumber, IsOptional, IsString, IsStrongPassword } from "class-validator";
 
 export class CreateUserDto {
-    @IsString()
-    login: string;
+  @IsString()
+  login: string;
 
-    @IsString()
-    name: string;
+  @IsString()
+  name: string;
 
-    @IsString()
-    @IsOptional()
-    email?: string;
+  @IsString()
+  @IsOptional()
+  email?: string;
 
-    @IsStrongPassword()
-    password: string;
+  @IsStrongPassword()
+  password: string;
 
-    @IsArray()
-    @IsOptional()
-    @IsEnum(Permission, { each: true })
-    permissions: Permission[];
+  @IsArray()
+  @IsOptional()
+  @IsEnum(Permission, { each: true })
+  permissions: Permission[];
+
+  @IsNumber()
+  empresaId: number;
 }
 
 export class CreateAdminUserDto {
-    @IsString()
-    login: string;
+  @IsString()
+  login: string;
 
-    @IsString()
-    name: string;
+  @IsString()
+  name: string;
 
-    @IsString()
-    email?: string;
+  @IsString()
+  email?: string;
 
-    @IsStrongPassword()
-    password: string;
+  @IsStrongPassword()
+  password: string;
 }
 
 /*export class UpdateUserDto {

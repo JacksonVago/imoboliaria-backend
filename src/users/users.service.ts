@@ -8,7 +8,7 @@ import { CreateUserDto } from './dtos/users.dto';
 export class UsersService {
   constructor(private PrismaService: PrismaService) { }
   async createUser(createUserDto: CreateUserDto) {
-    const { login, name, email, permissions } = createUserDto;
+    const { login, name, email, permissions, empresaId } = createUserDto;
     const checkIfUserExists = await this.PrismaService.user.findUnique({
       where: {
         login: email,
@@ -28,6 +28,7 @@ export class UsersService {
         email: email,
         password: hashedPasword,
         permissions: permissions,
+        empresa: empresaId ? { connect: { id: empresaId } } : undefined,
       },
     });
   }
@@ -95,7 +96,7 @@ export class UsersService {
     });
   }
 
-  async createAdminUser(login: string, name: string, email: string, password: string) {
+  /*async createAdminUser(login: string, name: string, email: string, password: string) {
     const checkAdminExists = await this.PrismaService.user.findFirst({
       where: {
         role: UserRole.ADMIN,
@@ -133,7 +134,7 @@ export class UsersService {
       password: undefined,
       ...result,
     };
-  }
+  }*/
 
   //get all users
   async getCollaborators() {

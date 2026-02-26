@@ -12,6 +12,7 @@ export class TipoLancamentoService {
       where: {
         name: createTipo.name,
       },
+      include: { empresa: true },
     });
 
     if (checkIfUserExists) {
@@ -26,7 +27,9 @@ export class TipoLancamentoService {
         parcelas: createTipo.parcelas,
         geraObservacao: createTipo.geraObservacao,
         valorFixo: createTipo.valorFixo,
+        empresa: createTipo.empresaId ? { connect: { id: createTipo.empresaId } } : undefined,
       },
+      include: { empresa: true },
     });
   }
 
@@ -43,11 +46,16 @@ export class TipoLancamentoService {
         geraObservacao: createTipo.geraObservacao,
         valorFixo: createTipo.valorFixo,
       },
+      include: { empresa: true },
     });
   }
 
-  async getTipos() {
+  async getTipos(empresa_id: number) {
     return await this.PrismaService.lancamentoTipo.findMany({
+      where: {
+        empresaId: empresa_id,
+      },
+      include: { empresa: true },
     });
   }
 
@@ -67,6 +75,7 @@ export class TipoLancamentoService {
       data: {
         status: PessoaStatus.ATIVA,
       },
+      include: { empresa: true },
     });
   }
   async desativaTipo(id: number) {
@@ -77,6 +86,7 @@ export class TipoLancamentoService {
       data: {
         status: PessoaStatus.CANCELADA,
       },
+      include: { empresa: true },
     });
   }
 }

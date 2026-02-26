@@ -43,6 +43,7 @@ export class AuthService {
       },
     });
 
+    //console.log('Authenticating user:', user);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }

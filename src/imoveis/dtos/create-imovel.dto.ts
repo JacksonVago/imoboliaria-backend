@@ -35,6 +35,31 @@ export class CreateImovelDto extends EnderecoDto {
   @IsOptional()
   valorAluguel?: number;
 
+  @Type(() => Number)
+  @IsNumber()
+  @IsOptional()
+  metragem?: number; //Metragem do imóvel
+
+  @Type(() => Number)
+  @IsNumber()
+  @IsOptional()
+  quartos?: number; //Número de quartos
+
+  @Type(() => Number)
+  @IsNumber()
+  @IsOptional()
+  banheiros?: number; //Número de banheiros
+
+  @Type(() => Number)
+  @IsNumber()
+  @IsOptional()
+  vagasEstacionamento?: number; //Número de vagas de estacionamento
+
+  @Type(() => Number)
+  @IsNumber()
+  @IsOptional()
+  andar?: number; //Andar do imóvel (se for apartamento)
+
   @IsOptional()
   @IsArray()
   proprietarios?: Proprietario[]
@@ -77,5 +102,19 @@ export class CreateImovelDto extends EnderecoDto {
     },
   )
   documentos?: MemoryStoredFile[];
+
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  @IsOptional()
+  condominioId: number;
+
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  @IsOptional()
+  blocoId: number;
+
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  empresaId: number;
 
 }

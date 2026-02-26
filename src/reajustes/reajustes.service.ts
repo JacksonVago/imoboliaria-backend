@@ -165,7 +165,7 @@ export class ReajustesService {
       });
 
 
-      return await this.prismaService.lancamento.findFirst({
+      return await this.prismaService.lancamentoLocacao.findFirst({
         where: {
           id: reajusteId,
         },

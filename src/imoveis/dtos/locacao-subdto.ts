@@ -1,4 +1,4 @@
-import { CreateLocacaoDto } from '@/locatarios/locatarios.controller';
+import { CreateLocacaoDto } from '@/locacoes/locacoes.controller';
 import { Type } from 'class-transformer';
 import {
   IsNumber,

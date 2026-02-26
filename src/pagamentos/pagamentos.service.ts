@@ -44,6 +44,9 @@ export class PagamentosService {
         valorOriginal: createBoletoDto.valorOriginal,
         valorPago: createBoletoDto.valorPago,
       },
+      include: {
+        locacao: true
+      },
     });
 
     //Verifica se tem anexos
@@ -57,7 +60,7 @@ export class PagamentosService {
   async delete(id: number) {
 
     //atualiza lançamentos relacionados
-    const result = await this.prismaService.lancamento.updateMany({
+    const result = await this.prismaService.lancamentoLocacao.updateMany({
       where: {
         boletoId: id,
       },
@@ -82,7 +85,12 @@ export class PagamentosService {
       },
       include: {
         documentos: true,
-        lancamentos: {
+        lanctoLocacao: {
+          include: {
+            lancamentotipo: true
+          }
+        },
+        lanctoCondominio: {
           include: {
             lancamentotipo: true
           }
@@ -235,14 +243,22 @@ export class PagamentosService {
     const where: Prisma.BoletoWhereInput = {
       OR: [
         {
-          lancamentos: {
+          lanctoLocacao: {
             every: {
               observacao: {
                 contains: search,
                 mode: 'insensitive'
               },
             }
-          }
+          },
+          lanctoCondominio: {
+            every: {
+              observacao: {
+                contains: search,
+                mode: 'insensitive'
+              },
+            }
+          },
         },
         {
           locacao: {
@@ -303,7 +319,12 @@ export class PagamentosService {
               },
             },
           },
-          lancamentos: {
+          lanctoLocacao: {
+            include: {
+              lancamentotipo: true
+            }
+          },
+          lanctoCondominio: {
             include: {
               lancamentotipo: true
             }
@@ -477,7 +498,7 @@ export class PagamentosService {
         //await this.filesService.deleteFile(data.documentosToDeleteIds.map(d => d.file));
       }
 
-      return await this.prismaService.lancamento.findFirst({
+      return await this.prismaService.lancamentoLocacao.findFirst({
         where: {
           id: pagamentoId,
         },
@@ -520,7 +541,8 @@ export class PagamentosService {
         },
         include: {
           locacao: true,
-          lancamentos: true,
+          lanctoLocacao: true,
+          lanctoCondominio: true,
           locatario: true,
           boletosBancarios: true
         },

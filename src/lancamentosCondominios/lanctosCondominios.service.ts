@@ -1,131 +1,39 @@
 import { BasePaginationData } from '@/common/interfaces/base-pagination';
 import { PrismaService } from '@/prisma/prisma.service';
 import {
-  BadRequestException,
   ConflictException,
-  Injectable,
+  Injectable
 } from '@nestjs/common';
-import { BoletoStatus, LancamentoLocacao, lancamentoStatus, Locacao, LocacaoStatus, Prisma } from '@prisma/client';
-import { CreateLancamentoDto, gerarBoletoDto } from './lancamentos.controller';
+import { Condominio, LancamentoCondominio, lancamentoStatus, LocacaoStatus, Prisma } from '@prisma/client';
+import { CreateLanctoCondominioDto } from './lanctosCondominios.controller';
 
 @Injectable()
-export class LancamentosService {
+export class LanctosCondominiosService {
   constructor(
     private readonly prismaService: PrismaService,
   ) { }
 
-  async create(createLancamentoDto: CreateLancamentoDto) {
+  async create(createLancamentoDto: CreateLanctoCondominioDto) {
 
-    const locacao = await this.prismaService.locacao.findUnique({
-      where: {
-        id: createLancamentoDto.locacaoId,
-        status: LocacaoStatus.ATIVA,
-      },
-    });
-
-    if (!locacao) {
-      throw new BadRequestException('Locacao not found');
-    }
-
-    const result = await this.prismaService.lancamentoLocacao.create({
+    const result = await this.prismaService.lancamentoCondominio.create({
       data: {
         parcela: createLancamentoDto.parcela,
-        tipoId: createLancamentoDto.tipoId,
+        lancamentotipo: { connect: { id: createLancamentoDto.tipoId } },
         valorLancamento: createLancamentoDto.valorLancamento,
         dataLancamento: createLancamentoDto.dataLancamento,
         vencimentoLancamento: createLancamentoDto.vencimentoLancamento,
+        rateia: createLancamentoDto.rateia,
         observacao: createLancamentoDto.observacao ? createLancamentoDto.observacao : '',
         status: createLancamentoDto.status,
-        locacaoId: createLancamentoDto.locacaoId
+        bloco: createLancamentoDto.blocoId ? { connect: { id: createLancamentoDto.blocoId } } : undefined,
       },
-      include: {
-        locacao: true,
-      },
-    });
-
-    return result;
-  }
-
-  async createPagamento(gerarPagamentoDto: gerarBoletoDto) {
-
-    const locacao = await this.prismaService.locacao.findUnique({
-      where: {
-        id: gerarPagamentoDto.id,
-        status: LocacaoStatus.ATIVA,
-      },
-    });
-
-    if (!locacao) {
-      throw new BadRequestException('Locacao not found');
-    }
-
-    //Monta dados do pagamento/boleto
-    const resultPag = await this.prismaService.boleto.create({
-      data: {
-        status: BoletoStatus.PENDENTE,
-        valorOriginal: gerarPagamentoDto.lancamentos.reduce((sum, lancamento) => sum + lancamento.valorLancamento, 0) + gerarPagamentoDto.valorAluguel,
-        valorPago: null,
-        dataEmissao: new Date(),
-        dataVencimento: gerarPagamentoDto.lancamentos[0].vencimentoLancamento,
-        dataPagamento: null,
-        locacao: { connect: { id: gerarPagamentoDto.id } },
-        locatario: {
-          connect: { id: gerarPagamentoDto.locatarios[0].id },
-        },
-        lanctoLocacao: {
-          connect: gerarPagamentoDto.lancamentos.map(lancamento => ({ id: lancamento.id })),
-        },
-      },
-      include: {
-        locacao: true,
-        locatario: true,
-        lanctoLocacao: true,
-      },
-    });
-
-
-    //Atualiza os lançamentos vinculando o pagamento
-    const result = await this.prismaService.lancamentoLocacao.updateMany({
-      where: {
-        id: {
-          in: gerarPagamentoDto.lancamentos.map(lancamento => lancamento.id),
-        },
-      },
-      data: {
-        status: lancamentoStatus.CONFIRMADO,
-      },
-    });
-
-    //Gera os novos lançamentos automáticos ou se houver parcelas
-    gerarPagamentoDto.lancamentos.forEach(async (lancamento) => {
-      if (lancamento.parcela < lancamento.lancamentotipo.parcelas || (lancamento.lancamentotipo.automatico === 'S' && lancamento.lancamentotipo.parcelas === 0)) {
-        const novaParcela = lancamento.lancamentotipo.parcelas > 0 ? lancamento.parcela + 1 : 1;
-        const novaDataLancamento = new Date();
-        const novoVencimentoLancamento = new Date(lancamento.vencimentoLancamento);
-        novoVencimentoLancamento.setMonth(novoVencimentoLancamento.getMonth() + 1);
-
-        console.log('Gerando novo lancamento automatico para locacaoId:', lancamento.lancamentotipo.name);
-
-        await this.prismaService.lancamentoLocacao.create({
-          data: {
-            parcela: novaParcela,
-            tipoId: lancamento.tipoId,
-            valorLancamento: lancamento.valorLancamento,
-            dataLancamento: novaDataLancamento,
-            vencimentoLancamento: novoVencimentoLancamento,
-            observacao: lancamento.observacao ? lancamento.observacao : '',
-            status: lancamentoStatus.ABERTO,
-            locacaoId: gerarPagamentoDto.id
-          },
-        });
-      }
     });
 
     return result;
   }
 
   async findById(id: number) {
-    return await this.prismaService.lancamentoLocacao.findUnique({
+    return await this.prismaService.lancamentoCondominio.findUnique({
       where: {
         id: id,
       }
@@ -138,7 +46,7 @@ export class LancamentosService {
     pageSize: number,
     statusLancamento: lancamentoStatus | null | undefined,
     exclude: string | null,
-  ): Promise<BasePaginationData<LancamentoLocacao>> {
+  ): Promise<BasePaginationData<LancamentoCondominio>> {
     const skip = page > 1 ? (page - 1) * pageSize : 0;
     let arr_id: number[] = [];
 
@@ -156,7 +64,7 @@ export class LancamentosService {
       }
     }
 
-    const where: Prisma.LancamentoLocacaoWhereInput = {
+    const where: Prisma.LancamentoCondominioWhereInput = {
       OR: [
         {
           observacao: {
@@ -165,24 +73,15 @@ export class LancamentosService {
           },
         },
         {
-          locacao: {
-            imovel: {
-              description: {
-                contains: search,
-                mode: 'insensitive'
-              },
-            },
-            locatarios: {
+          bloco: {
+            imovels: {
               every: {
-                pessoa: {
-                  email: {
-                    contains: search,
-                    mode: 'insensitive',
-                  },
-                }
-
+                description: {
+                  contains: search,
+                  mode: 'insensitive'
+                },
               }
-            }
+            },
           },
         },
       ],
@@ -193,32 +92,19 @@ export class LancamentosService {
     };
 
     const [data, total] = await this.prismaService.$transaction([
-      this.prismaService.lancamentoLocacao.findMany({
+      this.prismaService.lancamentoCondominio.findMany({
         where,
         include: {
-          locacao: {
+          bloco: {
             include: {
-              locatarios: {
-                include: {
-                  pessoa: {
-                    include: {
-                      endereco: true
-                    }
-                  }
-                }
-              },
-              imovel: {
-                include: {
-                  endereco: true,
-                }
-              },
+              imovels: true,
             }
           }
         },
         skip,
         take: pageSize,
       }),
-      this.prismaService.lancamentoLocacao.count({ where }),
+      this.prismaService.lancamentoCondominio.count({ where }),
     ]);
 
     const totalPages = Math.ceil(total / pageSize);
@@ -231,7 +117,7 @@ export class LancamentosService {
     };
   }
 
-  async findManyLocacao(empresaId: number,
+  async findManyCondominio(empresaId: number,
     search: string,
     page: number,
     pageSize: number,
@@ -239,7 +125,7 @@ export class LancamentosService {
     exclude: string | null,
     dataInicial: Date,
     dataFinal: Date,
-  ): Promise<BasePaginationData<Locacao>> {
+  ): Promise<BasePaginationData<Condominio>> {
     const skip = page > 1 ? (page - 1) * pageSize : 0;
     let arr_id: number[] = [];
 
@@ -260,105 +146,88 @@ export class LancamentosService {
     let dataFim: Date = dataFinal;
     dataFim.setDate(dataFinal.getDate() + 1);
 
-    const where: Prisma.LocacaoWhereInput = {
+    const where: Prisma.CondominioWhereInput = {
       OR: [
         {
-          lancamentos: {
+          blocos: {
             every: {
-              observacao: {
-                contains: search,
-                mode: 'insensitive'
+              lancamentosCondominios: {
+                every: {
+                  observacao: {
+                    contains: search,
+                    mode: 'insensitive'
+                  },
+                }
               },
-            }
-          }
-        },
-        {
-          imovel: {
-            description: {
-              contains: search,
-              mode: 'insensitive'
+              imovels: {
+                every: {
+                  description: {
+                    contains: search,
+                    mode: 'insensitive'
+                  },
+                  locacoes: {
+                    every: {
+                      locatarios: {
+                        every: {
+                          pessoa: {
+                            email: {
+                              contains: search,
+                              mode: 'insensitive',
+                            },
+                          }
+                        },
+                      }
+                    }
+                  },
+                },
+              },
             },
           },
-          locatarios: {
-            every: {
-              pessoa: {
-                email: {
-                  contains: search,
-                  mode: 'insensitive',
-                },
-              }
-
-            }
-          }
-        },
-      ],
+        },],
       AND: [
-        {
-          status: {
-            equals: LocacaoStatus.ATIVA
-          }
-        },
-        /*{
-          lancamentos:
-          {
-            every: {
-              dataLancamento: {
-                gte: dataInicial,
-                lte: dataFim
-              }
-            },
-          }
-        },
-        {
-          lancamentos:
-          {
-            none: {
-              dataLancamento: {
-                gte: dataInicial,
-                lte: dataFim
-              }
-            },
-          }
-        }*/
         empresaId ? { empresaId: empresaId } : {},
       ]
 
     };
 
     const [data, total] = await this.prismaService.$transaction([
-      this.prismaService.locacao.findMany({
+      this.prismaService.condominio.findMany({
         where,
         include: {
-          locatarios: {
+          endereco: true,
+          blocos: {
             include: {
-              pessoa: {
+              lancamentosCondominios: {
+                where: {
+                  dataLancamento: {
+                    gte: dataInicial,
+                    lte: dataFim
+                  }
+                },
                 include: {
-                  endereco: true
+                  lancamentotipo: true
+                }
+              },
+              imovels: {
+                include: {
+                  locacoes: {
+                    include: {
+                      locatarios: {
+                        include: {
+                          pessoa: true
+                        }
+                      }
+                    }
+                  }
                 }
               }
-            }
-          },
-          imovel: {
-            include: {
-              endereco: true,
-            }
-          },
-          lancamentos: {
-            where: {
-              dataLancamento: {
-                gte: dataInicial,
-                lte: dataFim
-              }
-            },
-            include: {
-              lancamentotipo: true
             }
           },
         },
         skip,
         take: pageSize,
       }),
-      this.prismaService.locacao.count({ where }),
+      this.prismaService.condominio.count({ where }),
     ]);
 
     const totalPages = Math.ceil(total / pageSize);
@@ -387,7 +256,7 @@ export class LancamentosService {
   }
 
   async delete(id: number) {
-    return await this.prismaService.lancamentoLocacao.delete({
+    return await this.prismaService.lancamentoCondominio.delete({
       where: {
         id: id,
       }
@@ -483,20 +352,10 @@ export class LancamentosService {
     };
   }
 
-  async update(lancamentoId: number, data: CreateLancamentoDto) {
+  async update(lancamentoId: number, data: CreateLanctoCondominioDto) {
     try {
 
-      const existingLocacao = await this.prismaService.locacao.findFirst({
-        where: {
-          id: data.locacaoId,
-        }
-      });
-
-      if (!existingLocacao) {
-        throw new BadRequestException('Locacao not found');
-      }
-
-      const result = await this.prismaService.lancamentoLocacao.update({
+      const result = await this.prismaService.lancamentoCondominio.update({
         where: {
           id: lancamentoId,
         },
@@ -507,20 +366,21 @@ export class LancamentosService {
           valorLancamento: data.valorLancamento,
           vencimentoLancamento: data.vencimentoLancamento,
           status: data.status,
-          observacao: data.observacao
+          observacao: data.observacao,
+          rateia: data.rateia,
         },
         include: {
-          locacao: true
+          bloco: true
         },
       });
 
 
-      return await this.prismaService.lancamentoLocacao.findFirst({
+      return await this.prismaService.lancamentoCondominio.findFirst({
         where: {
           id: lancamentoId,
         },
         include: {
-          locacao: true,
+          bloco: true,
         },
       });
 
@@ -536,10 +396,10 @@ export class LancamentosService {
     }
   }
 
-  async updateStatus(lancamentoId: number, data: CreateLancamentoDto) {
+  async updateStatus(lancamentoId: number, data: CreateLanctoCondominioDto) {
     try {
 
-      const result = await this.prismaService.lancamentoLocacao.update({
+      const result = await this.prismaService.lancamentoCondominio.update({
         where: {
           id: lancamentoId,
         },
@@ -547,17 +407,17 @@ export class LancamentosService {
           status: data.status,
         },
         include: {
-          locacao: true
+          bloco: true
         },
       });
 
 
-      return await this.prismaService.lancamentoLocacao.findFirst({
+      return await this.prismaService.lancamentoCondominio.findFirst({
         where: {
           id: lancamentoId,
         },
         include: {
-          locacao: true,
+          bloco: true,
         },
       });
 

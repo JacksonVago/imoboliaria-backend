@@ -3,6 +3,7 @@ import { EnvService } from '@/env/env.service';
 import { Injectable } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
+
 @Injectable()
 export class FilesService {
   supabase: SupabaseClient<any, 'public', any>;
@@ -21,7 +22,6 @@ export class FilesService {
         .upload(file.filename, file.buffer, {
           contentType: file.mimetype,
         });
-
       return result?.data?.fullPath;
     } catch (error) {
       console.log('supabaseerror', error);
@@ -52,3 +52,4 @@ export class FilesService {
     throw new Error('Method not implemented.');
   }
 }
+

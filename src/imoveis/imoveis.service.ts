@@ -1,7 +1,7 @@
 import { BasePaginationData } from '@/common/interfaces/base-pagination';
 import { DEFAULT_PAGE_SIZE } from '@/common/interfaces/base-search';
 import { FileData } from '@/common/interfaces/file-data';
-import { FilesService } from '@/files/files.service';
+import { FilesAzureService } from '@/files/azurefiles.service';
 import { PrismaService } from '@/prisma/prisma.service';
 import { getFileType } from '@/proprietarios/proprietarios.service';
 import { Injectable, NotFoundException } from '@nestjs/common';
@@ -29,7 +29,8 @@ export interface IFindImovelByIdResponse extends Imovel {
 export class ImoveisService {
   constructor(
     private readonly prismaService: PrismaService,
-    private readonly filesService: FilesService,
+    private filesAzureService: FilesAzureService,
+
   ) { }
 
   //async create(createImovelDto: CreateImovelDto,): Promise<Imovel & { endereco: Endereco; imovelPhotos: ImovelPhoto[] }> {
@@ -41,6 +42,11 @@ export class ImoveisService {
         finalidade: createImovelDto.finalidade,
         porcentagemLucroImobiliaria: createImovelDto.porcentagemLucroImobiliaria,
         valorAluguel: createImovelDto.valorAluguel,
+        metragem: createImovelDto.metragem,
+        quartos: createImovelDto.quartos,
+        banheiros: createImovelDto.banheiros,
+        vagasEstacionamento: createImovelDto.vagasEstacionamento,
+        andar: createImovelDto.andar,
 
         //TODO: add observacoes
         //TODO: add imovelPhotos
@@ -58,29 +64,33 @@ export class ImoveisService {
         },
         tipo: {
           connect: { id: createImovelDto.tipoId }
-        }
+        },
+        condominio: createImovelDto.condominioId ? { connect: { id: createImovelDto.condominioId } } : undefined,
+        bloco: createImovelDto.blocoId ? { connect: { id: createImovelDto.blocoId } } : undefined,
+        empresa: createImovelDto.empresaId ? { connect: { id: createImovelDto.empresaId } } : undefined,
       },
       include: {
         endereco: true,
         observacoes: true,
         imovelPhotos: true,
         documentos: true,
-        tipo: { select: { id: true, name: true } }
+        tipo: { select: { id: true, name: true } },
+        empresa: true,
       },
     });
 
     if (createImovelDto?.images?.length) {
-      await this.createImovelPhotos(result.id, createImovelDto.images);
+      await this.createImovelPhotos(createImovelDto.empresaId, result.id, createImovelDto.images);
     }
 
     if (createImovelDto?.documentos?.length) {
-      await this.createImovelDocuments(result.id, createImovelDto.documentos);
+      await this.createImovelDocuments(createImovelDto.empresaId, result.id, createImovelDto.documentos);
     }
 
     return result;
   }
 
-  async createImovelPhotos(imovelId: number, files: MemoryStoredFile[]) {
+  async createImovelPhotos(empresaId: number, imovelId: number, files: MemoryStoredFile[]) {
     try {
       // Crie uma lista de promessas para processar cada arquivo
       const imagePromises = files.map(async (file) => {
@@ -94,7 +104,11 @@ export class ImoveisService {
           encoding: file.encoding,
         };
 
-        const url = await this.filesService.uploadFile(adaptedFile);
+        //const url = await this.filesService.uploadFile(adaptedFile);
+
+        const folder = 'admimoveis/' + empresaId.toString() + '/imoveis/' + imovelId.toString() + '/' + file.originalName.replaceAll(' ', '_');
+
+        const url = await this.filesAzureService.uploadFile(folder, file);
 
         const fileType = getFileType(file);
 
@@ -155,6 +169,9 @@ export class ImoveisService {
         documentos: true,
         observacoes: true,
         tipo: { select: { id: true, name: true } },
+        empresa: true,
+        condominio: true,
+        bloco: true,
       },
     });
 
@@ -165,7 +182,7 @@ export class ImoveisService {
     return data;
   }
 
-  async findMany(
+  async findMany(empresaId: number,
     searchTerm: string,
     page: number = 1,
     pageSize: number = DEFAULT_PAGE_SIZE,
@@ -244,6 +261,7 @@ export class ImoveisService {
       AND: [
         ((tipoImovel === null || tipoImovel === undefined) ? {} : { tipoId: { equals: Number(tipoImovel) } }),
         (arr_id.length === 0 ? {} : { id: { notIn: arr_id } }),
+        empresaId ? { empresaId: empresaId } : {},
       ]
     };
 
@@ -264,7 +282,8 @@ export class ImoveisService {
                 }
               }
             }
-          }
+          },
+          empresa: true,
         },
         where,
       }),
@@ -378,6 +397,7 @@ export class ImoveisService {
           observacoes: true,
           imovelPhotos: true,
           tipo: { select: { id: true, name: true } },
+          empresa: true,
         },
         where,
       }),
@@ -412,6 +432,7 @@ export class ImoveisService {
       include: {
         endereco: true,
         tipo: { select: { id: true, name: true } },
+        empresa: true,
       },
       where,
     });
@@ -448,6 +469,11 @@ export class ImoveisService {
         finalidade: data.finalidade,
         porcentagemLucroImobiliaria: data.porcentagemLucroImobiliaria,
         valorAluguel: data.valorAluguel,
+        metragem: data.metragem,
+        quartos: data.quartos,
+        banheiros: data.banheiros,
+        vagasEstacionamento: data.vagasEstacionamento,
+        andar: data.andar,
 
         tipo: data.tipoId ? { connect: { id: data.tipoId } } : undefined,
         //if we have any address data, update it
@@ -472,7 +498,13 @@ export class ImoveisService {
             }
             : undefined,
       },
-      include: { endereco: true, imovelPhotos: true, observacoes: true, tipo: { select: { id: true, name: true } } },
+      include: {
+        endereco: true,
+        imovelPhotos: true,
+        observacoes: true,
+        tipo: { select: { id: true, name: true } },
+        empresa: true,
+      },
     });
     //check if we have a new valores to gerenate ImovelValorHistorico
 
@@ -508,7 +540,7 @@ export class ImoveisService {
 
     // Adiciona novas imagens, se fornecidas
     if (images?.length) {
-      await this.createImovelPhotos(id, images);
+      await this.createImovelPhotos(data.empresaId, id, images);
     }
 
     // Remove documentos, se solicitado
@@ -539,7 +571,7 @@ export class ImoveisService {
 
     // Adiciona novas imagens, se fornecidas
     if (documentos?.length) {
-      await this.createImovelDocuments(id, documentos);
+      await this.createImovelDocuments(data.empresaId, id, documentos);
     }
 
     //get updated data
@@ -611,6 +643,7 @@ export class ImoveisService {
   }
 
   async createImovelDocuments(
+    EmpresaId: number,
     ImovelId: number,
     files: MemoryStoredFile[],
   ) {
@@ -627,14 +660,19 @@ export class ImoveisService {
           encoding: file.encoding,
         };
 
-        const str_url = await this.filesService.uploadFile(adaptedFile);
+        //const str_url = await this.filesService.uploadFile(adaptedFile);
+
+        const folder = 'admimoveis/' + EmpresaId.toString() + '/imoveis/' + ImovelId.toString() + '/' + file.originalName.replaceAll(' ', '_');
+
+        const url = await this.filesAzureService.uploadFile(folder, file);
+
         const fileType = getFileType(file);
 
         return this.prismaService.genericAnexo.create({
           data: {
             tipoArquivo: fileType,
             size: file.size,
-            url: str_url,
+            url: url,
             type: file.mimetype,
             name: file.originalName,
             imovel: {
