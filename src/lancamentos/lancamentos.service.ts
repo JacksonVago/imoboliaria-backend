@@ -35,6 +35,7 @@ export class LancamentosService {
         dataLancamento: createLancamentoDto.dataLancamento,
         vencimentoLancamento: createLancamentoDto.vencimentoLancamento,
         observacao: createLancamentoDto.observacao ? createLancamentoDto.observacao : '',
+        linhaDigitavel: createLancamentoDto.linhaDigitavel ? createLancamentoDto.linhaDigitavel : '',
         status: createLancamentoDto.status,
         locacaoId: createLancamentoDto.locacaoId
       },
@@ -507,6 +508,7 @@ export class LancamentosService {
           valorLancamento: data.valorLancamento,
           vencimentoLancamento: data.vencimentoLancamento,
           status: data.status,
+          linhaDigitavel: data.linhaDigitavel ? data.linhaDigitavel : '',
           observacao: data.observacao
         },
         include: {

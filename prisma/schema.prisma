@@ -446,6 +446,7 @@ model LancamentoLocacao {
   valorLancamento      Float //Valor do lançamento
   dataLancamento       DateTime
   vencimentoLancamento DateTime
+  linhaDigitavel       String? //Linha digitável do boleto gerado para esse lançamento
   observacao           String
   status               lancamentoStatus @default(ABERTO)
   createdAt            DateTime         @default(now())
@@ -519,6 +520,7 @@ model LancamentoCondominio {
   valorLancamento      Float //Valor do lançamento
   dataLancamento       DateTime
   vencimentoLancamento DateTime
+  linhaDigitavel       String? //Linha digitável do boleto gerado para esse lançamento
   observacao           String
   rateia               String //Sim ou Não - Indica se o lançamento deve ser rateado entre os imóveis do condomínio
   status               lancamentoStatus @default(ABERTO)

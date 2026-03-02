@@ -72,6 +72,10 @@ export class CreateLanctoCondominioDto {
   @IsDate()
   vencimentoLancamento: Date;
 
+  @IsOptional()
+  @IsString()
+  linhaDigitavel: string; //Linha digitável do boleto gerado para esse lançamento
+
   //start garantia locacao data fields
   @IsOptional()
   @IsString()

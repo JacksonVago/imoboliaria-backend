@@ -29,7 +29,7 @@ export class PagSeguroService {
       const empresa = await this.PrismaService.empresa.create({
         data: {
           nome: createOrderDto.nome,
-          cnpj: '11111111111111',
+          cnpj: createOrderDto.cpf.toString(), // Usando CPF como CNPJ para simplificar
           email: createOrderDto.email,
           status: PessoaStatus.ATIVA,
           endereco: {
