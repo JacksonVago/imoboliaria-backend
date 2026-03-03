@@ -23,6 +23,8 @@ RUN npx prisma generate
 # Copy the rest of your application code
 COPY . .
 
+RUN apk add dumb-init
+
 # Build the NestJS application
 RUN npm run build
 
@@ -30,4 +32,4 @@ RUN npm run build
 EXPOSE 98
 
 # Command to run the application
-CMD ["node", "dist/src/main.js"]
+CMD ["dumb-init","node", "dist/src/main.js"]
