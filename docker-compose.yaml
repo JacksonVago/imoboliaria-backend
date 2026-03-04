@@ -11,14 +11,14 @@ services:
   #  volumes:
   #    - polls_pg:/var/lib/postgresql/data
   imoboliaria-backend:
-    container_name: imoboliaria-backend
+    container_name: backend
     ports:
       - "98:98"
-    build: ./imoboliaria-backend
-    depends_on:
-      - postgres
+    build: .
+    #depends_on:
+    #  - postgres
     env_file:
-      - ./imoboliaria-backend/.env
+      - ./.env
     command: sh -c "npm run seed && npm start"  
 volumes:
   polls_pg:
